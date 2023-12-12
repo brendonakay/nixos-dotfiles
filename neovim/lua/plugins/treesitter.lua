@@ -12,6 +12,8 @@ return {
         "go",
         "gomod",
         "sql",
+        "nix",
+        "ocaml",
       })
     end,
   },

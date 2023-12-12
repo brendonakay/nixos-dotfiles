@@ -27,9 +27,9 @@ return {
         "tflint",
         "terraform-ls",
         -- javascript
-        "eslint-lsp",
-        "prettier",
-        "eslint_d",
+        --"eslint-lsp",
+        --"prettier",
+        --"eslint_d",
         "typescript-language-server",
         --"deno",
         -- lua
