@@ -1,5 +1,7 @@
 # NixOS Dotfiles
-## Using Home Manager and Flakes
+Using Home Manager and Flakes
 
 # TODO
-- [ ] Modularize home manager programs.
+- [o] Modularize home manager programs.
+- [ ] Migrate to i3 window manager.
+- [ ] Pimp out `tmux` bottom bar.

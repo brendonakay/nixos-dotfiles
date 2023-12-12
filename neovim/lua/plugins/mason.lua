@@ -22,7 +22,7 @@ return {
         "black",
         "isort",
         "mypy",
-        "pylint",
+        --"pylint",
         -- terraform
         "tflint",
         "terraform-ls",
