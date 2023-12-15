@@ -45,6 +45,8 @@ return {
         "json-lsp",
         "sqlls",
         "vale",
+        -- Nix
+        "nil",
       },
     },
   },

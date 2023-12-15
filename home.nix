@@ -1,5 +1,5 @@
 # Inputs
-{ config, pkgs, lib, ... }:
+{ pkgs, ... }:
 
 # Outputs
 {
@@ -35,6 +35,10 @@
 
     # Go
     pkgs.go
+
+    # Rust
+    pkgs.cargo
+    pkgs.rustc
 
     # Python
     pkgs.python3
