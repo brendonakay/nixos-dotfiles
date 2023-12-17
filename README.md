@@ -2,11 +2,10 @@
 Using Home Manager and Flakes
 
 # TODO
-- [.] Modularize home manager programs.
 - [ ] Migrate to i3 window manager.
 - [ ] Pimp out `tmux` bottom bar.
 - [ ] Add `kitty` config.
 - [ ] Install `lazygit`.
 - [ ] Add Slack.
 - [ ] Add Discord.
-- [ ] Add `tagbar`.
+- [ ] Add `tagbar` to NeoVim.

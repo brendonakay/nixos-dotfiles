@@ -11,7 +11,19 @@
     let
       system = "x86_64-linux";
       lib = nixpkgs.lib;
-      pkgs = nixpkgs.legacyPackages.${system};
+
+      # create patched nixpkgs
+      nixpkgs-patched = (import nixpkgs { inherit system; }).applyPatches {
+        name = "nixpkgs-patched";
+        src = nixpkgs;
+      };
+
+      # configure pkgs
+      pkgs = import nixpkgs-patched {
+        inherit system;
+        config = { allowUnfree = true;
+                   allowUnfreePredicate = (_: true); };
+      };
     in {
       nixosConfigurations = {
         nixos = lib.nixosSystem {

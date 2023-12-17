@@ -21,6 +21,7 @@
   imports = [
     ./git/default.nix
     ./neovim/default.nix
+    ./ocaml/default.nix
     ./tmux/default.nix
     ./zsh/default.nix
   ];
@@ -45,6 +46,15 @@
 
     # NodeJS
     pkgs.nodejs
+
+    # Discord
+    pkgs.discord
+
+    # Spotify
+    pkgs.spotify
+
+    # Slack
+    pkgs.slack
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
@@ -92,4 +102,7 @@
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
+
+  # Maybe move these to their own files
+  programs.lazygit = { enable = true; };
 }
