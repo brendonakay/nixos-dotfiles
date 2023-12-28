@@ -20,6 +20,7 @@
   # Modules
   imports = [
     ./git/default.nix
+    ./go/default.nix
     ./neovim/default.nix
     ./ocaml/default.nix
     ./tmux/default.nix
@@ -33,9 +34,6 @@
     pkgs.gcc
     # Make
     pkgs.cmake
-
-    # Go
-    pkgs.go
 
     # Rust
     pkgs.cargo
@@ -55,6 +53,9 @@
 
     # Slack
     pkgs.slack
+
+    # Transmission
+    pkgs.transmission
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the

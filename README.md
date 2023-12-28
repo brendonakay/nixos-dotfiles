@@ -6,6 +6,5 @@ Using Home Manager and Flakes
 - [ ] Pimp out `tmux` bottom bar.
 - [ ] Add `kitty` config.
 - [ ] Install `lazygit`.
-- [ ] Add Slack.
-- [ ] Add Discord.
 - [ ] Add `tagbar` to NeoVim.
+- [ ] Add a direnv setup to let me know when I'm in a nix shell.
