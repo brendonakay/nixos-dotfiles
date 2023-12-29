@@ -85,7 +85,7 @@
   users.users.brendonakay = {
     isNormalUser = true;
     description = "brendonakay";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "docker" ];
     packages = with pkgs; [
       firefox
     #  thunderbird
@@ -134,5 +134,8 @@
 
   # Default user shell set to zsh.
   users.defaultUserShell = pkgs.zsh;
+
+  # Enable Docker virtualisation
+  virtualisation.docker.enable = true;
 
 }

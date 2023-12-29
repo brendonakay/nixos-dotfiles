@@ -14,5 +14,10 @@ in {
       plugins = [ "git" ];
       theme = "robbyrussell";
     };    
+
+    initExtra = ''
+      eval "$(direnv hook zsh)"
+      eval "$(opam env)"
+    '';
   };
 }

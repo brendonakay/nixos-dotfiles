@@ -35,6 +35,9 @@
     # Make
     pkgs.cmake
 
+    # Direnv
+    pkgs.direnv
+
     # Rust
     pkgs.cargo
     pkgs.rustc
