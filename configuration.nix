@@ -145,4 +145,6 @@
   # Enable Docker virtualisation
   virtualisation.docker.enable = true;
 
+  # Latest kernel packages
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 }

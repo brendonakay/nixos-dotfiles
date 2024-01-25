@@ -57,8 +57,8 @@
     # Slack
     pkgs.slack
 
-    # Transmission
-    pkgs.transmission
+    # Torrent clients
+    pkgs.fragments
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
