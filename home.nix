@@ -23,7 +23,9 @@
     ./go/default.nix
     ./neovim/default.nix
     ./ocaml/default.nix
+    ./python/default.nix
     ./tmux/default.nix
+    #./wayland/default.nix
     ./zsh/default.nix
   ];
 
@@ -42,9 +44,6 @@
     pkgs.cargo
     pkgs.rustc
 
-    # Python
-    pkgs.python3
-
     # NodeJS
     pkgs.nodejs
 
@@ -59,6 +58,19 @@
 
     # Torrent clients
     pkgs.fragments
+
+    # Gleam
+    pkgs.gleam
+
+    # Erlang
+    pkgs.erlang
+    pkgs.rebar3
+
+    # Tomli for Python
+   # pkgs.tomli
+
+    # Tex
+    pkgs.texlive.combined.scheme-full
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the

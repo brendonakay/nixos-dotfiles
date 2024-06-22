@@ -7,13 +7,13 @@ let
 in {
   programs.zsh = {
     enable = true;
-    enableAutosuggestions = true;
+    autosuggestion = { enable = true; };
     shellAliases = myAliases;
     oh-my-zsh = {
       enable = true;
       plugins = [ "git" ];
       theme = "robbyrussell";
-    };    
+    };
 
     initExtra = ''
       eval "$(direnv hook zsh)"

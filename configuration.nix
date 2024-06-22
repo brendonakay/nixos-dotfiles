@@ -47,6 +47,8 @@
 
   # Enable the X11 windowing system.
   services.xserver.enable = true;
+  # Enable Hyprland
+  services.xserver.displayManager.gdm.wayland = true;
 
   # Enable the GNOME Desktop Environment.
   services.xserver.displayManager.gdm.enable = true;
@@ -58,8 +60,14 @@
     xkbVariant = "";
   };
 
+  # External monitor
+  services.xserver.videoDrivers = [
+    "displayLink"
+    "modsetting"
+  ];
+
   # Enable CUPS to print documents.
-  services.printing.enable = true;
+#  services.printing.enable = true;
 
   # Enable sound with pipewire.
   sound.enable = true;
@@ -88,6 +96,7 @@
     extraGroups = [ "networkmanager" "wheel" "docker" ];
     packages = with pkgs; [
       firefox
+      arandr
     #  thunderbird
     ];
   };
@@ -139,6 +148,11 @@
     dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
   };
 
+  programs.hyprland = {
+      enable = true;
+      xwayland.enable = true;
+  };
+
   # Default user shell set to zsh.
   users.defaultUserShell = pkgs.zsh;
 
@@ -147,4 +161,16 @@
 
   # Latest kernel packages
   boot.kernelPackages = pkgs.linuxPackages_latest;
+
+  # Fingerprint
+  services.fprintd.enable = true;
+
+  # Enable firmware updates with fwupd
+  services.fwupd.enable = true;
+
+  # Powermanagement
+  powerManagement = {
+    enable = true;
+    powertop.enable = true;
+  };
 }

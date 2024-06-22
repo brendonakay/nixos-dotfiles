@@ -34,7 +34,6 @@ return {
         --"deno",
         -- lua
         "lua-language-server",
-        "stylua",
         -- proto
         --"buf",
         -- misc

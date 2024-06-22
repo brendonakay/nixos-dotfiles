@@ -2,12 +2,16 @@
   description = "Main flake";
 
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-23.11";
-    home-manager.url = "github:nix-community/home-manager/release-23.11";
+    nixpkgs.url = "nixpkgs/nixos-unstable";
+    home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    hyprland = {
+      url = "github:hyprwm/hyprland";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, home-manager, ... }:
+  outputs = { self, nixpkgs, home-manager, hyprland, ... }:
     let
       system = "x86_64-linux";
       lib = nixpkgs.lib;
@@ -29,6 +33,7 @@
         nixos = lib.nixosSystem {
           inherit system;
           modules = [ ./configuration.nix ];
+          specialArgs = { inherit hyprland; };
         };
       };
       homeConfigurations = {
