@@ -11,6 +11,9 @@ return {
         ocamllsp = {
           mason = false,
         },
+        hls = {
+          mason = false,
+        },
       },
     },
     setup = {

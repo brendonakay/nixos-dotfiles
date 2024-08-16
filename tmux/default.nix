@@ -3,9 +3,11 @@
 {
     programs.tmux = {
       enable = true;
-      #plugins = with pkgs; [
-      #  tmuxPlugins.better-mouse-mode
-      #];
+      plugins = with pkgs; [
+        tmuxPlugins.resurrect
+        tmuxPlugins.cpu
+        tmuxPlugins.sensible
+      ];
       extraConfig = ''
 set -g default-terminal "screen-256color"
 set-window-option -g xterm-keys on
@@ -62,11 +64,11 @@ set-option -sa terminal-overrides ',XXX:RGB'
 set-option -sg escape-time 10
 
 # List of plugins
-set -g @plugin 'tmux-plugins/tmux-resurrect'
-set -g @plugin 'samoshkin/tmux-plugin-sysstat'
-set -g @plugin 'tmux-plugins/tmux-cpu'
-set -g @plugin 'tmux-plugins/tpm'
-set -g @plugin 'tmux-plugins/tmux-sensible'
+#set -g @plugin 'tmux-plugins/tmux-resurrect'
+#set -g @plugin 'samoshkin/tmux-plugin-sysstat'
+#set -g @plugin 'tmux-plugins/tmux-cpu'
+#set -g @plugin 'tmux-plugins/tpm'
+#set -g @plugin 'tmux-plugins/tmux-sensible'
 
 # Other examples:
 # set -g @plugin 'github_username/plugin_name'
