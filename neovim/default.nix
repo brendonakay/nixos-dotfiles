@@ -5,6 +5,8 @@
     # LazyVim deps
     pkgs.ripgrep
     pkgs.fd
+    pkgs.stylua
+    pkgs.lua-language-server
   ];
 
   programs.neovim = { 

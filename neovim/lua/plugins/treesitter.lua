@@ -14,6 +14,8 @@ return {
         "sql",
         "nix",
         "ocaml",
+        "lua",
+        "haskell",
       })
     end,
   },

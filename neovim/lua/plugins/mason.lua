@@ -33,7 +33,7 @@ return {
         "typescript-language-server",
         --"deno",
         -- lua
-        "lua-language-server",
+        --"lua-language-server",
         -- proto
         --"buf",
         -- misc

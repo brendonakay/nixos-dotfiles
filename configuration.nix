@@ -173,4 +173,7 @@
     enable = true;
     powertop.enable = true;
   };
+
+  # Enable OpenGL
+  hardware.opengl.enable = true;
 }
