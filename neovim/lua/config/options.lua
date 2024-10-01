@@ -4,3 +4,4 @@
 local opt = vim.opt
 opt.clipboard = "" -- Disable default using system clipboard
 opt.cursorcolumn = true
+opt.spellfile = "/home/brendonakay/.dotfiles/neovim/spell/en.utf-8.add"

@@ -16,6 +16,7 @@ return {
         "ocaml",
         "lua",
         "haskell",
+        "markdown",
       })
     end,
   },

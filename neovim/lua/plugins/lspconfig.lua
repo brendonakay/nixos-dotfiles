@@ -13,6 +13,13 @@ return {
         },
         hls = {
           mason = false,
+          settings = {
+            haskell = {
+              plugin = {
+                rename = { config = { crossModule = true } },
+              },
+            },
+          },
         },
         lua_ls = {
           mason = false,
