@@ -45,6 +45,27 @@
     LC_TIME = "en_US.UTF-8";
   };
 
+  # Power saving services
+  services.thermald.enable = true;
+  services.power-profiles-daemon.enable = false;
+  services.auto-cpufreq = {
+    enable = true;
+    settings = {
+      battery = {
+        governor = "powersave";
+        turbo = "never";
+      };
+      charger = {
+        governor = "powersave";
+        turbo = "auto";
+      };
+    };
+  };
+  services.system76-scheduler = {
+    enable = true;
+    useStockConfig = true;
+  };
+
   # Enable the X11 windowing system.
   services.xserver.enable = true;
   # Enable Hyprland
@@ -172,6 +193,7 @@
   powerManagement = {
     enable = true;
     powertop.enable = true;
+    cpuFreqGovernor = "powersave";
   };
 
   # Enable OpenGL

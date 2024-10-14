@@ -32,6 +32,9 @@
   # The home.packages option allows you to install Nix packages into your
   # environment.
   home.packages = [
+    # AWS
+    pkgs.awscli2
+
     # C Compiler
     pkgs.gcc
     # Make
