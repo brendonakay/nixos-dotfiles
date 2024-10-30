@@ -70,10 +70,14 @@
     pkgs.rebar3
 
     # Tomli for Python
-   # pkgs.tomli
+    # pkgs.tomli
 
     # Tex
     pkgs.texlive.combined.scheme-full
+
+    # Haskell
+    pkgs.stack
+    pkgs.ghc
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
