@@ -27,6 +27,7 @@
     ./tmux/default.nix
     #./wayland/default.nix
     ./zsh/default.nix
+    ./haskell/default.nix
   ];
 
   # The home.packages option allows you to install Nix packages into your
@@ -74,10 +75,6 @@
 
     # Tex
     pkgs.texlive.combined.scheme-full
-
-    # Haskell
-    pkgs.stack
-    pkgs.ghc
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
