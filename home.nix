@@ -21,13 +21,15 @@
   imports = [
     ./git/default.nix
     ./go/default.nix
-    ./neovim/default.nix
+    #./neovim/default.nix
+    ./nixvim/default.nix
     ./ocaml/default.nix
     ./python/default.nix
     ./tmux/default.nix
     #./wayland/default.nix
     ./zsh/default.nix
     ./haskell/default.nix
+    ./kitty/default.nix
   ];
 
   # The home.packages option allows you to install Nix packages into your

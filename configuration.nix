@@ -91,8 +91,22 @@
 #  services.printing.enable = true;
 
   # Enable sound with pipewire.
-  sound.enable = true;
+  #sound.enable = true;
   hardware.pulseaudio.enable = false;
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+    settings = {
+      General = {
+        Name = "Computer";
+        ControllerMode = "dual";
+        FastConnectable = "true";
+        Experimental = "true";
+      };
+      Policy = { AutoEnable = "true"; };
+      LE = { EnableAdvMonInterleaveScan = "true"; };
+    };
+  };
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
@@ -192,7 +206,7 @@
   # Powermanagement
   powerManagement = {
     enable = true;
-    powertop.enable = true;
+    powertop.enable = false;
     cpuFreqGovernor = "powersave";
   };
 

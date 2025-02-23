@@ -9,9 +9,14 @@
       url = "github:hyprwm/hyprland";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixvim = {
+      url = "github:nix-community/nixvim";
+      # If using a stable channel you can use `url = "github:nix-community/nixvim/nixos-<version>"`
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, home-manager, hyprland, ... }:
+  outputs = { self, nixpkgs, home-manager, hyprland, nixvim, ... }:
     let
       system = "x86_64-linux";
       lib = nixpkgs.lib;
@@ -39,7 +44,10 @@
       homeConfigurations = {
         brendonakay = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
-          modules = [ ./home.nix ];
+          modules = [
+            ./home.nix
+            nixvim.homeManagerModules.nixvim
+          ];
         };
       };
     };
