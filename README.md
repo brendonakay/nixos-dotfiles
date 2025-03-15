@@ -7,6 +7,7 @@ My main editor is NeoVim configured by Nix. This is accomplished using [Nixvim](
 Thanks to the many examples in [this list](https://nix-community.github.io/nixvim/user-guide/config-examples.html) for helping me build my own config. 
 
 # TODO
+- [ ] Configure laziness for Nixvim.
 - [ ] Migrate to i3 window manager.
 - [ ] Pimp out `tmux` bottom bar.
 - [ ] Add a direnv setup to let me know when I'm in a nix shell.

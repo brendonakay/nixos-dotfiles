@@ -33,11 +33,11 @@
           html.enable = true;
           htmx.enable = true;
           hls = {
-              enable = true;
-              installGhc = true;
+            enable = true;
+            installGhc = true;
           };
           tailwindcss.enable = true;
-          typos-lsp = {
+          typos_lsp = {
             enable = true;
             extraOptions.init_options.diagnosticSeverity = "Hint";
           };

@@ -26,6 +26,7 @@
     pkgs.lua-language-server
     pkgs.vale
     pkgs.nixfmt-rfc-style
+    pkgs.prettierd
   ];
 
   programs.nixvim = {

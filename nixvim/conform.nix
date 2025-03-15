@@ -21,49 +21,28 @@
       formatters_by_ft = {
         liquidsoap = [ "liquidsoap-prettier" ];
         html = [
-          [
-            "prettierd"
-            "prettier"
-          ]
+          "prettierd"
         ];
         css = [
-          [
-            "prettierd"
-            "prettier"
-          ]
+          "prettierd"
         ];
         javascript = [
-          [
-            "prettierd"
-            "prettier"
-          ]
+          "prettierd"
         ];
         javascriptreact = [
-          [
-            "prettierd"
-            "prettier"
-          ]
+          "prettierd"
         ];
         typescript = [
-          [
-            "prettierd"
-            "prettier"
-          ]
+          "prettierd"
         ];
         typescriptreact = [
-          [
-            "prettierd"
-            "prettier"
-          ]
+          "prettierd"
         ];
         python = [ "black" ];
         lua = [ "stylua" ];
         nix = [ "nixfmt" ];
         markdown = [
-          [
-            "prettierd"
-            "prettier"
-          ]
+          "prettierd"
         ];
         yaml = [
           "yamllint"
@@ -78,7 +57,10 @@
         sh = [
           "shfmt"
         ];
-        haskell = [ "hlint" "ormolu" ];
+        haskell = [
+          "hlint"
+          "ormolu"
+        ];
       };
     };
   };

@@ -7,6 +7,13 @@
       loaded_python_provider = 0; # Python 2
     };
 
+    diagnostics = {
+      virtual_lines = {
+        only_current_line = true;
+      };
+      virtual_text = false;
+    };
+
     # clipboard = {
     #   # Use system clipboard
     #   register = "unnamedplus";
