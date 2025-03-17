@@ -17,6 +17,8 @@
     ./markdown-preview.nix
     ./conform.nix
     ./surround.nix
+    ./copilot-vim.nix
+    ./codecompanion.nix
   ];
 
   home.packages = [

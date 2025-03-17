@@ -34,6 +34,7 @@
                    allowUnfreePredicate = (_: true); };
       };
     in {
+      home-manager.useGlobalPkgs = true;
       nixosConfigurations = {
         nixos = lib.nixosSystem {
           inherit system;
