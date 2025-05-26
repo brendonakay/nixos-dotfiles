@@ -8,7 +8,7 @@
     ormolu
     cabal-install
     hlint
-    haskell-language-server
+    # haskell-language-server
     haskellPackages.hakyll
   ];
 }

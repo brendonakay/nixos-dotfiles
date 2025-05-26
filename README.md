@@ -22,8 +22,10 @@ for helping me build my own config.
 # TODO
 
 - [ ] Configure laziness for Nixvim.
+- [ ] Add GitSigns (or whatever colors git changes in the left side)
 - [ ] Migrate to i3 window manager.
 - [ ] Pimp out `tmux` bottom bar.
 - [ ] Add a direnv setup to let me know when I'm in a nix shell.
+- [ ] Rewrite Nix stuff to use fewer dependencies. Do not nixify NeoVim config.
 - [x] Add `kitty` config.
 - [x] Install `lazygit`.

@@ -34,7 +34,7 @@
           htmx.enable = true;
           hls = {
             enable = true;
-            installGhc = true;
+            installGhc = false;
           };
           tailwindcss.enable = true;
           typos_lsp = {

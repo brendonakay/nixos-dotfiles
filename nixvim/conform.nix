@@ -40,7 +40,7 @@
         ];
         python = [ "black" ];
         lua = [ "stylua" ];
-        nix = [ "nixfmt-rfc-style" ];
+        nix = [ "nixfmt" ];
         markdown = [
           "prettierd"
         ];

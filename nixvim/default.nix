@@ -3,22 +3,24 @@
 {
   imports = [
     # TODO: Organize these in directories; e.g. plugins
-    ./lsp.nix
-    ./tree-sitter.nix
+    ./autocommands.nix
+    ./codecompanion.nix
     ./completion.nix
-    ./oil.nix
-    ./lualine.nix
+    ./conform.nix
+    ./copilot-vim.nix
+    ./extraPlugins.nix
+    ./gitblame.nix
     ./gitblame.nix
     ./keymappings.nix
-    ./options.nix
-    ./telescope.nix
-    ./autocommands.nix
-    ./gitblame.nix
+    ./lsp.nix
+    ./lualine.nix
     ./markdown-preview.nix
-    ./conform.nix
+    ./oil.nix
+    ./options.nix
+    ./sleuth.nix
     ./surround.nix
-    ./copilot-vim.nix
-    ./codecompanion.nix
+    ./telescope.nix
+    ./tree-sitter.nix
   ];
 
   home.packages = [

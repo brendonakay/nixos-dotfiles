@@ -6,13 +6,6 @@
       command = "norm zz";
     }
 
-    # Open help in a vertical split
-    {
-      event = "FileType";
-      pattern = "help";
-      command = "wincmd L";
-    }
-
     # Enable spellcheck for some filetypes
     {
       event = "FileType";
