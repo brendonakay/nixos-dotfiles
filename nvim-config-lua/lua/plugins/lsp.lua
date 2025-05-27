@@ -8,8 +8,8 @@ return {
 			-- Key mappings
 			local keymaps = {
 				n = {
-					["<leader>k"] = vim.diagnostic.goto_prev,
-					["<leader>j"] = vim.diagnostic.goto_next,
+					["[d"] = vim.diagnostic.goto_prev,
+					["]d"] = vim.diagnostic.goto_next,
 					gd = vim.lsp.buf.definition,
 					gr = vim.lsp.buf.references,
 					gt = vim.lsp.buf.type_definition,
