@@ -22,7 +22,8 @@
     ./git/default.nix
     ./go/default.nix
     #./neovim/default.nix
-    ./nixvim/default.nix
+    # ./nixvim/default.nix
+    ./nvim-config-lua/default.nix
     ./ocaml/default.nix
     ./python/default.nix
     ./tmux/default.nix
@@ -126,5 +127,7 @@
   programs.home-manager.enable = true;
 
   # Maybe move these to their own files
-  programs.lazygit = { enable = true; };
+  programs.lazygit = {
+    enable = true;
+  };
 }
