@@ -7,14 +7,14 @@ return {
 	},
 	config = function()
 		local dap = require("dap")
-		-- vim.keymap.set("n", "<C-b>", dap.toggle_breakpoint, { desc = "Toggle breakpoint" })
-		-- vim.keymap.set("n", "<C-d>", dap.continue, { desc = "Debug continue" })
-		vim.keymap.set("n", "<Leader>s", dap.step_over, { desc = "Debug step over" })
-		vim.keymap.set("n", "<Leader>j", dap.step_into, { desc = "Debug step into" })
-		vim.keymap.set("n", "<Leader>k", dap.step_out, { desc = "Debug step out" })
+		vim.keymap.set("n", "<Leader>Db", dap.toggle_breakpoint, { desc = "Toggle breakpoint" })
+		vim.keymap.set("n", "<Leader>Dc", dap.continue, { desc = "Debug continue" })
+		vim.keymap.set("n", "<Leader>Ds", dap.step_over, { desc = "Debug step over" })
+		vim.keymap.set("n", "<Leader>Dj", dap.step_into, { desc = "Debug step into" })
+		vim.keymap.set("n", "<Leader>Dk", dap.step_out, { desc = "Debug step out" })
 
 		local dappy = require("dap-python")
-		dappy.setup("~/.local/share/nvim/mason/packages/debugpy/venv/bin/python")
+		dappy.setup("/etc/profiles/per-user/bkay/bin/debugpy")
 
 		local function _wrap_test_fn_with_opts(fn)
 			return function()
@@ -25,13 +25,13 @@ return {
 		dappy.test_runner = "pytest"
 		vim.keymap.set(
 			"n",
-			"<Leader>dm",
+			"<Leader>Dm",
 			_wrap_test_fn_with_opts(dappy.test_method),
 			{ desc = "Python: test method (debug)" }
 		)
 		vim.keymap.set(
 			"n",
-			"<Leader>dc",
+			"<Leader>DC",
 			_wrap_test_fn_with_opts(dappy.test_class),
 			{ desc = "Python: test class (debug)" }
 		)

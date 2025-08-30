@@ -15,7 +15,7 @@ return {
 				javascriptreact = { "prettierd" },
 				typescript = { "prettierd" },
 				typescriptreact = { "prettierd" },
-				python = { "black" },
+				python = { "ruff_fix", "ruff_format" },
 				lua = { "stylua" },
 				nix = { "nixfmt" },
 				markdown = { "prettierd" },

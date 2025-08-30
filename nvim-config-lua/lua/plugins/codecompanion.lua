@@ -12,6 +12,17 @@ return {
 					provider = "mini_diff",
 				},
 			},
+			-- adapters = {
+			--      copilot = function()
+			--        return require("codecompanion.adapters").extend("copilot", {
+			--          schema = {
+			--            model = {
+			--              default = "claude-3.7-sonnet",
+			--            },
+			--          },
+			--        })
+			--      end,
+			--    },
 			adapters = {
 				copilot = "copilot",
 			},

@@ -1,7 +1,5 @@
--- Vertically center document when entering insert mode
-vim.api.nvim_create_autocmd("InsertEnter", {
-	command = "norm zz",
-})
+vim.opt.formatoptions = "jcroqlnt"
+vim.opt.textwidth = 80
 
 -- Enable spellcheck for markdown filetypes
 vim.api.nvim_create_autocmd("FileType", {
@@ -26,8 +24,8 @@ vim.api.nvim_create_autocmd("BufWinLeave", {
 		vim.opt.textwidth = 120
 	end,
 })
-
--- Show diagnostics float on cursor hold
+--
+-- -- Show diagnostics float on cursor hold
 vim.api.nvim_create_autocmd("CursorHold", {
 	pattern = "*",
 	callback = function()

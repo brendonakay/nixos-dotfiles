@@ -5,9 +5,9 @@ vim.g.loaded_python_provider = 0 -- Python 2
 
 -- Diagnostics settings
 vim.diagnostic.config({
-	virtual_lines = {
-		only_current_line = true,
-	},
+	-- virtual_lines = {
+	-- 	only_current_line = true,
+	-- },
 	virtual_text = false,
 })
 

@@ -11,7 +11,7 @@ return {
 				lualine_a = { "mode" },
 				lualine_b = { "branch" },
 				lualine_c = {
-					{ "filename", newfile_status = true, path = 1 },
+					{ "filename", newfile_status = true, path = 1, color = { fg = "#ffffff" } },
 					"diff",
 				},
 				lualine_x = {

@@ -12,10 +12,11 @@ return {
 					["]d"] = vim.diagnostic.goto_next,
 					gd = vim.lsp.buf.definition,
 					gr = vim.lsp.buf.references,
-					gt = vim.lsp.buf.type_definition,
+					-- gt = vim.lsp.buf.type_definition,
 					gi = vim.lsp.buf.implementation,
 					K = vim.lsp.buf.hover,
 					cr = vim.lsp.buf.rename,
+					ca = vim.lsp.buf.code_action,
 				},
 			}
 
@@ -33,12 +34,11 @@ return {
 				"lua_ls",
 				"nil_ls",
 				"pyright",
-				"pylsp",
+				"ruff",
 				"templ",
 				"html",
 				"htmx",
 				"hls",
-				"tailwindcss",
 				"typos_lsp",
 			}
 
