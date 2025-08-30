@@ -36,6 +36,9 @@
   # The home.packages option allows you to install Nix packages into your
   # environment.
   home.packages = [
+    # Claude
+    pkgs.claude-code
+
     # AWS
     pkgs.awscli2
 

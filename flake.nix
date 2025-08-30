@@ -16,7 +16,15 @@
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, hyprland, nixvim, ... }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      home-manager,
+      hyprland,
+      nixvim,
+      ...
+    }:
     let
       system = "x86_64-linux";
       lib = nixpkgs.lib;
@@ -30,11 +38,14 @@
       # configure pkgs
       pkgs = import nixpkgs-patched {
         inherit system;
-        config = { allowUnfree = true;
-                   allowUnfreePredicate = (_: true); };
+        config = {
+          allowUnfree = true;
+          allowUnfreePredicate = (_: true);
+        };
       };
-    in {
-      home-manager.useGlobalPkgs = true;
+    in
+    {
+      # home-manager.useGlobalPkgs = true;
       nixosConfigurations = {
         nixos = lib.nixosSystem {
           inherit system;
