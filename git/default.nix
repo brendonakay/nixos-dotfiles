@@ -1,10 +1,14 @@
 {
     programs.git = {
       enable = true;
-      userName  = "Brendon A. Kay";
-      userEmail = "bak04280@gmail.com";
-      aliases = {
-        st = "status";
+      settings = {
+        user = {
+          name = "Brendon A. Kay";
+          email = "bak04280@gmail.com";
+        };
+        alias = {
+          st = "status";
+        };
       };
     };
 }

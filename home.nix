@@ -21,8 +21,6 @@
   imports = [
     ./git/default.nix
     ./go/default.nix
-    #./neovim/default.nix
-    # ./nixvim/default.nix
     ./nvim-config-lua/default.nix
     ./ocaml/default.nix
     ./python/default.nix
@@ -36,11 +34,17 @@
   # The home.packages option allows you to install Nix packages into your
   # environment.
   home.packages = [
+    # Google Chrome Web Browser
+    pkgs.google-chrome
+
     # Claude
     pkgs.claude-code
 
     # AWS
     pkgs.awscli2
+
+    # GitHub CLI
+    pkgs.gh
 
     # C Compiler
     pkgs.gcc
@@ -68,6 +72,9 @@
 
     # Torrent clients
     pkgs.fragments
+
+    # rclone (Google Drive sync)
+    pkgs.rclone
 
     # Gleam
     pkgs.gleam

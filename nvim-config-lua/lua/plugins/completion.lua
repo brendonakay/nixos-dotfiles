@@ -29,6 +29,7 @@ return {
 				sources = {
 					{ name = "path" },
 					{ name = "nvim_lsp" },
+					{ name = "lean" },
 					{ name = "luasnip" },
 					{
 						name = "buffer",

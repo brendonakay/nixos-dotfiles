@@ -5,13 +5,16 @@
 { pkgs, ... }:
 
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-    ];
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+  ];
 
   # Experimental mode
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -69,30 +72,30 @@
   # Enable the X11 windowing system.
   services.xserver.enable = true;
   # Enable Hyprland
-  services.xserver.displayManager.gdm.wayland = true;
+  services.displayManager.gdm.wayland = true;
 
   # Enable the GNOME Desktop Environment.
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
+  services.displayManager.gdm.enable = true;
+  services.desktopManager.gnome.enable = true;
 
   # Configure keymap in X11
-  services.xserver = {
+  services.xserver.xkb = {
     layout = "us";
-    xkbVariant = "";
+    variant = "";
   };
 
   # External monitor
   services.xserver.videoDrivers = [
-    "displayLink"
-    "modsetting"
+    "displaylink"
+    "modesetting"
   ];
 
   # Enable CUPS to print documents.
-#  services.printing.enable = true;
+  #  services.printing.enable = true;
 
   # Enable sound with pipewire.
   #sound.enable = true;
-  hardware.pulseaudio.enable = false;
+  services.pulseaudio.enable = false;
   hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;
@@ -103,8 +106,12 @@
         FastConnectable = "true";
         Experimental = "true";
       };
-      Policy = { AutoEnable = "true"; };
-      LE = { EnableAdvMonInterleaveScan = "true"; };
+      Policy = {
+        AutoEnable = "true";
+      };
+      LE = {
+        EnableAdvMonInterleaveScan = "true";
+      };
     };
   };
   security.rtkit.enable = true;
@@ -128,11 +135,15 @@
   users.users.brendonakay = {
     isNormalUser = true;
     description = "brendonakay";
-    extraGroups = [ "networkmanager" "wheel" "docker" ];
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      "docker"
+    ];
     packages = with pkgs; [
       firefox
       arandr
-    #  thunderbird
+      #  thunderbird
     ];
   };
 
@@ -140,13 +151,15 @@
   nixpkgs.config.allowUnfree = true;
   nixpkgs.config.allowUnfreePredicate = (_: true);
 
-
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = [
-  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-  #  wget
+    #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    #  wget
   ];
+
+  # Allow non-root users to mount FUSE filesystems (e.g. rclone Google Drive)
+  programs.fuse.userAllowOther = true;
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -186,8 +199,8 @@
   };
 
   programs.hyprland = {
-      enable = true;
-      xwayland.enable = true;
+    enable = true;
+    xwayland.enable = true;
   };
 
   # Default user shell set to zsh.
@@ -213,5 +226,8 @@
   };
 
   # Enable OpenGL
-  hardware.opengl.enable = true;
+  hardware.graphics.enable = true;
+
+  # Try to fix WiFi driver issues
+  hardware.enableRedistributableFirmware = true;
 }

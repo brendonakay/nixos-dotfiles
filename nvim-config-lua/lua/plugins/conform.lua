@@ -18,7 +18,7 @@ return {
 				python = { "black" },
 				lua = { "stylua" },
 				nix = { "nixfmt" },
-				markdown = { "prettierd" },
+				-- markdown = { "prettierd" },
 				yaml = { "yamllint", "yamlfmt" },
 				terragrunt = { "hcl" },
 				bash = { "shfmt" },

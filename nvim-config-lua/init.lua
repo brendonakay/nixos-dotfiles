@@ -1,5 +1,6 @@
 require("vim.keymaps")
 require("vim.options")
+require("vim.autocommands")
 
 -- local CONFIG = require("config")
 

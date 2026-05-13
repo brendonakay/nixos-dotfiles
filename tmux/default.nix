@@ -13,6 +13,7 @@ set -g default-terminal "screen-256color"
 set-window-option -g xterm-keys on
 set-window-option -g mode-keys vi
 set -g history-limit 30000
+set -g mouse on
 
 # solarized options
 # from

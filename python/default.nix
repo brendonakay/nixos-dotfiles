@@ -1,6 +1,6 @@
 { config, pkgs, ...}:
 {	home.packages = with pkgs; [
-	  (python311.withPackages (
+	  (python312.withPackages (
 	  	ps:
 			with ps; [
         # Typing

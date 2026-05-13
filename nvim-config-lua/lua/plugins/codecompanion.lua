@@ -12,9 +12,6 @@ return {
 					provider = "mini_diff",
 				},
 			},
-			adapters = {
-				copilot = "copilot",
-			},
 			opts = {
 				log_level = "DEBUG",
 				send_code = true,
@@ -22,9 +19,6 @@ return {
 				use_default_prompts = true,
 			},
 			strategies = {
-				agent = {
-					adapter = "copilot",
-				},
 				chat = {
 					adapter = "copilot",
 				},

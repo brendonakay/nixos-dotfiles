@@ -11,11 +11,14 @@ return {
 					["[d"] = vim.diagnostic.goto_prev,
 					["]d"] = vim.diagnostic.goto_next,
 					gd = vim.lsp.buf.definition,
-					gr = vim.lsp.buf.references,
+					gr = function()
+						require("telescope.builtin").lsp_references()
+					end,
 					gt = vim.lsp.buf.type_definition,
 					gi = vim.lsp.buf.implementation,
 					K = vim.lsp.buf.hover,
 					cr = vim.lsp.buf.rename,
+					ca = vim.lsp.buf.code_action,
 				},
 			}
 
@@ -36,9 +39,8 @@ return {
 				"pylsp",
 				"templ",
 				"html",
-				"htmx",
-				"hls",
-				"tailwindcss",
+				-- "htmx",
+				-- "tailwindcss",
 				"typos_lsp",
 			}
 
@@ -47,19 +49,12 @@ return {
 			end
 
 			-- Specific server configurations
-			lspconfig.hls.setup({
-				settings = {
-					haskell = {
-						installGhc = false,
-					},
-				},
-			})
-
 			lspconfig.typos_lsp.setup({
 				init_options = {
 					diagnosticSeverity = "Hint",
 				},
 			})
+
 		end,
 	},
 	-- Fidget plugin
