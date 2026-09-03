@@ -1,0 +1,8 @@
+# everforest with g:everforest_better_performance writes a generated syntax
+# cache to after/syntax. everforest#syn_rootpath() falls back to a hardcoded
+# ~/.vim when the plugin directory is not writable, which it never is under Nix,
+# and there is no option to redirect it. ../vim/default.nix therefore links
+# after/ftplugin/markdown.vim individually rather than linking after/ as a
+# whole, so ~/.vim/after stays a real directory outside this repo and the cache
+# lands there. This entry is a backstop in case that link ever changes.
+after/syntax/

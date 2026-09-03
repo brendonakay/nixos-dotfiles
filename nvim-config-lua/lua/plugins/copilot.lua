@@ -5,7 +5,7 @@ return {
 		vim.g.copilot_filetypes = {
 			["*"] = false,
 			python = true,
-			haskell = true,
+			haskell = false,
 		}
 	end,
 }

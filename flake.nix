@@ -35,6 +35,13 @@
       };
     in {
       home-manager.useGlobalPkgs = true;
+
+      # Home Manager module for Vim. /etc/nix-darwin imports ./vim/default.nix
+      # by path rather than through this output, which keeps this flake's nixvim
+      # and hyprland inputs out of the darwin lock file.
+      homeManagerModules.vim = ./vim/default.nix;
+      homeManagerModules.emacs = ./emacs/default.nix;
+
       nixosConfigurations = {
         nixos = lib.nixosSystem {
           inherit system;

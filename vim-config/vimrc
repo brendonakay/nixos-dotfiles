@@ -1,0 +1,49 @@
+" Vim configuration, ported from the Neovim Lua config in ../nvim-config-lua.
+" README.md in this directory covers the plugin mapping and the pieces of the
+" Neovim config that have no Vim equivalent.
+"
+" ../vim/default.nix installs Vim and links this directory into ~/.vim, so the
+" layout is the conventional one: Vim finds ~/.vim/vimrc on its own, ~/.vim is
+" already first on 'runtimepath', ~/.vim/after is already last, and the plugins
+" in ~/.vim/pack/nix/start load without any help.
+"
+" This file is deliberately legacy Vimscript while everything in config/ is
+" Vim9 script. A Vim9 vimrc makes Vim apply Vim9 line-continuation rules to the
+" legacy plugin scripts it loads afterwards, so every plugin that continues a
+" list or dictionary with a leading backslash fails with E10 and E697. ALE and
+" markdown-preview both do. Keeping the vimrc legacy loads plugins correctly,
+" and each file under config/ is its own script, so they are still Vim9 script.
+
+set nocompatible
+
+let g:vim_config_root = expand('~/.vim')
+
+function! s:Source(relative) abort
+  execute 'source' fnameescape(g:vim_config_root . '/' . a:relative)
+endfunction
+
+" Leader keys, set before any mapping so <leader> resolves to <Space>.
+let g:mapleader = ' '
+let g:maplocalleader = ' '
+
+" Everything here runs before the plugins in ~/.vim/pack load, which is what the
+" g: plugin variables need.
+call s:Source('config/options.vim')
+call s:Source('config/plugins.vim')
+call s:Source('config/statusline.vim')
+call s:Source('config/lsp.vim')
+call s:Source('config/completion.vim')
+call s:Source('config/format.vim')
+call s:Source('config/copilot.vim')
+call s:Source('config/git.vim')
+call s:Source('config/keymaps.vim')
+call s:Source('config/autocommands.vim')
+call s:Source('config/todo.vim')
+call s:Source('config/debugger.vim')
+
+" Vim loads packages after the vimrc, so pull them in here and let the rest of
+" the config talk to them directly.
+packloadall
+
+" Needs everforest on 'runtimepath', so it runs after packloadall.
+call s:Source('config/darkmode.vim')

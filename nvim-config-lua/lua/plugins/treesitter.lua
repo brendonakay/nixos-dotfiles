@@ -2,30 +2,34 @@ return {
 	{
 		-- Tree-sitter plugin
 		"nvim-treesitter/nvim-treesitter",
+		lazy = false,
 		build = ":TSUpdate",
 		config = function()
-			require("nvim-treesitter.configs").setup({
-				ensure_installed = { "python", "sql", "json", "yaml" }, -- Automatically install Python and SQL parsers
-				auto_install = true,
-				highlight = {
-					enable = true,
-					additional_vim_regex_highlighting = true,
-					custom_captures = {},
-				},
-				-- incremental_selection = {
-				-- 	enable = true,
-				-- 	keymaps = {
-				-- 		init_selection = false,
-				-- 		node_incremental = "grn",
-				-- 		node_decremental = "grm",
-				-- 		scope_incremental = "grc",
-				-- 	},
-				-- },
-				indent = {
-					enable = true,
-				},
-				-- parser_install_dir = vim.fs.joinpath(vim.fn.stdpath("data"), "treesitter"),
-				-- sync_install = false,
+			require("nvim-treesitter").setup()
+			require("nvim-treesitter").install({
+				"python",
+				"sql",
+				"json",
+				"yaml",
+				"javascript",
+				"typescript",
+				"tsx",
+				"go",
+				"nix",
+				"toml",
+				"haskell",
+				"markdown",
+				"markdown_inline",
+			})
+			vim.api.nvim_create_autocmd("FileType", {
+				callback = function()
+					pcall(vim.treesitter.start)
+				end,
+			})
+			vim.api.nvim_create_autocmd("FileType", {
+				callback = function()
+					vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+				end,
 			})
 		end,
 	},
@@ -52,11 +56,4 @@ return {
 	-- 		})
 	-- 	end,
 	-- },
-	-- Additional plugin (hmts)
-	{
-		"calops/hmts.nvim",
-		config = function()
-			-- Configuration for hmts if needed
-		end,
-	},
 }

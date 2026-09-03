@@ -21,5 +21,5 @@ vim.opt.rtp:prepend(lazypath)
 
 -- Initialize plugins
 require("lazy").setup("plugins")
-vim.cmd("set termguicolors")
+vim.opt.background = "dark"
 vim.cmd("colorscheme everforest")

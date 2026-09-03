@@ -62,7 +62,9 @@ return {
   {
     "sainnhe/everforest",
     priority = 1000,
-    everforest_background = "hard",
+    config = function()
+      vim.g.everforest_background = "hard"
+    end,
   },
   -- Themes:
   -- * papercolor

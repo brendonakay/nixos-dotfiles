@@ -17,6 +17,7 @@ return {
 					K = vim.lsp.buf.hover,
 					cr = vim.lsp.buf.rename,
 					ca = vim.lsp.buf.code_action,
+					cl = vim.lsp.codelens.run,
 				},
 			}
 
@@ -46,11 +47,26 @@ return {
 				lspconfig[server].setup({})
 			end
 
+			-- Refresh code lenses so HLS lenses (type signatures, import lens)
+			-- stay current as the buffer changes.
+			vim.api.nvim_create_autocmd({ "BufEnter", "InsertLeave", "TextChanged" }, {
+				callback = function()
+					if vim.lsp.codelens then
+						vim.lsp.codelens.refresh({ bufnr = 0 })
+					end
+				end,
+			})
+
 			-- Specific server configurations
 			lspconfig.hls.setup({
 				settings = {
 					haskell = {
 						installGhc = false,
+						formattingProvider = "ormolu",
+						plugin = {
+							["ghcide-type-lenses"] = { globalOn = true },
+							importLens = { globalOn = true },
+						},
 					},
 				},
 			})

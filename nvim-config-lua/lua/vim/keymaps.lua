@@ -18,6 +18,7 @@ vim.keymap.set(
 	":GitBlameOpenCommitURL<CR>",
 	{ noremap = true, silent = true, desc = "Open git blame URL" }
 )
+vim.keymap.set("n", "<leader>lg", ":LazyGit<CR>", { noremap = true, silent = true, desc = "Open lazygit" })
 vim.keymap.set(
 	"n",
 	"<leader>pm",
@@ -54,3 +55,10 @@ vim.keymap.set(
 vim.keymap.set("n", "<leader>d", ":Telescope diagnostics<CR>", { noremap = true, silent = true, desc = "Diagnostics" })
 vim.keymap.set("n", "<leader>ql", ":Telescope quickfix<CR>", { noremap = true, silent = true, desc = "Quickfix list" })
 vim.keymap.set("n", "<leader>u", ":Telescope undo<CR>", { noremap = true, silent = true, desc = "Undo tree" })
+
+-- Copy file path to system clipboard for sharing
+vim.keymap.set("n", "<leader>yf", function()
+	local filepath = vim.fn.expand("%:.")
+	vim.fn.setreg("+", filepath)
+	vim.notify("Copied " .. filepath .. " to clipboard")
+end, { noremap = true, silent = true, desc = "Copy file path to clipboard" })

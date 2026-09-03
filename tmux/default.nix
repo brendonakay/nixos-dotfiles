@@ -9,7 +9,7 @@
         tmuxPlugins.sensible
       ];
       extraConfig = ''
-set -g default-terminal "screen-256color"
+set -g default-terminal "tmux-256color"
 set-window-option -g xterm-keys on
 set-window-option -g mode-keys vi
 set -g history-limit 30000
@@ -60,7 +60,7 @@ set -g status-left-length 20
 bind -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel "pbcopy"
 
 # NVim stuff
-set-option -sa terminal-overrides ',XXX:RGB'
+set-option -sa terminal-overrides ',xterm-ghostty:RGB'
 set-option -sg escape-time 10
 
 # List of plugins
