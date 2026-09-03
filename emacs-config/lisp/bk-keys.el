@@ -11,8 +11,14 @@
 
 (require 'evil)
 
+;; evil-set-leader binds SPC to a menu-item whose :filter looks up [leader].
+;; The earlier config also set the *local* leader to SPC, whose second
+;; evil-global-set-key overwrote SPC to look up [localleader] instead -- and
+;; since nothing binds <localleader>, SPC resolved to nil and every leader key
+;; silently did nothing. No <localleader> bindings exist, so just set the one
+;; leader. A local leader, if ever wanted, must use a key that does not start
+;; with SPC (binding "SPC x" would turn SPC into a prefix and break this again).
 (evil-set-leader nil (kbd "SPC"))
-(evil-set-leader nil (kbd "SPC") t)     ; also as local leader
 
 ;; NeoZoom.lua's toggle.  winner-mode remembers the layout, so this is just
 ;; delete-other-windows plus an undo.
@@ -57,7 +63,7 @@
  "h"   #'evil-ex-nohighlight
 
  ;; Files and search.  telescope becomes project.el plus the minibuffer.
- "o"   #'dired-jump                     ; oil.nvim, then netrw, now Dired
+ ;; dired-jump was <leader>o; dropped in favour of the built-in C-x C-j.
  "SPC" #'project-find-file              ; find_files
  "sg"  #'project-find-regexp            ; live_grep
  "sb"  #'switch-to-buffer               ; buffers
@@ -95,8 +101,13 @@
     "gr" #'xref-find-references
     "gi" #'eglot-find-implementation
     "K"  #'bk-lsp-hover
-    "cr" #'eglot-rename
-    "ca" #'eglot-code-actions
+    ;; rename/action were cr/ca, but a normal-state binding under c turns c into
+    ;; a prefix and shadows the c change operator (cw, ciw, cc) in every LSP
+    ;; buffer -- the same Emacs rule that moved <leader>cc/<leader>dd.  Moved to
+    ;; the leader.  gd/gr/gi are fine: g is already a prefix, so local additions
+    ;; compose with gg, gc and the rest rather than shadowing them.
+    (kbd "<leader>r") #'eglot-rename
+    (kbd "<leader>a") #'eglot-code-actions
     (kbd "[d") #'flymake-goto-prev-error
     (kbd "]d") #'flymake-goto-next-error)
   ;; lsp.lua bound cl to codelens.  Eglot does not implement codeLens, but the
@@ -107,8 +118,8 @@
   ;; quickfix.import.refine as well, and it sends the Flymake diagnostics at
   ;; point along with the request, which is what the not-in-scope fix needs.
   (evil-define-key 'normal 'local
-    "cl" #'eglot-code-action-quickfix
-    "co" #'eglot-code-action-organize-imports))
+    (kbd "<leader>x") #'eglot-code-action-quickfix
+    (kbd "<leader>o") #'eglot-code-action-organize-imports))
 
 (add-hook 'eglot-managed-mode-hook #'bk-keys--eglot)
 

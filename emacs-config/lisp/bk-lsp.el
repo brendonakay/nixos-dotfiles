@@ -60,10 +60,15 @@
         (message "No documentation at point")))))
 
 ;; typos-lsp is the only server the Vim config registered that Eglot does not
-;; know about.  It runs against every file type, which is why it is added with a
-;; catch-all rather than per mode.
+;; know about.  It is a catch-all for prog-mode and text-mode, but MUST be
+;; appended (the trailing t): eglot--lookup-mode returns the first matching
+;; entry, and since clangd, nil, pyright etc. all attach to prog-mode-derived
+;; modes, a prepended catch-all shadows every real language server -- Eglot
+;; runs only one server per buffer, so it would start typos-lsp instead of the
+;; language server and K/gd/ca would do nothing.  Appended, the specific
+;; built-in servers win and typos-lsp only covers modes with no other server.
 (add-to-list 'eglot-server-programs
-             '((prog-mode text-mode) . ("typos-lsp")))
+             '((prog-mode text-mode) . ("typos-lsp")) t)
 
 ;; The haskell block from lsp.lua: no GHC install, ormolu for formatting, and the
 ;; two lens plugins on.  The lenses will not render, see the note above, but they
