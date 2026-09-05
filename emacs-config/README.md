@@ -8,7 +8,7 @@ the exercise is to see what the editor does on its own.
 
 ## The package count, which is the whole argument
 
-The Vim config needs **26 third-party plugins**. This needs **seven**, three of
+The Vim config needs **26 third-party plugins**. This needs **eight**, three of
 which are Evil:
 
 | Package | Why Emacs cannot do it alone |
@@ -20,6 +20,7 @@ which are Evil:
 | `dape` | DAP client. Needs nothing outside Emacs, unlike vimspector |
 | `nix-mode` | Emacs ships no Nix mode, and this repo is mostly Nix |
 | `markdown-mode` | Emacs 30 ships no markdown mode either; Emacs 31 has a built-in `markdown-ts-mode` |
+| `magit` | Built-in VC covers blame, log and diff, but nothing built in comes close for staging, rebasing or reading history |
 
 Everything else came out of the box:
 
@@ -29,7 +30,7 @@ Everything else came out of the box:
 | ale | `flymake`, plus `bk-format.el` for the fixers |
 | netrw (and oil.nvim before it) | Dired, and `wdired` for the editable listing |
 | fzf.vim, fzf-wrapper | `project.el`, `fido-vertical-mode` |
-| vim-fugitive, git-messenger | `vc-git`, `vc-annotate`, `vc-print-log` |
+| vim-fugitive, git-messenger | `vc-annotate`, `vc-print-log`; Magit for the rest |
 | vim-which-key | `which-key`, and it opens by itself |
 | vim-commentary | `comment-or-uncomment-region`, wrapped in an Evil operator |
 | vim-repeat | `repeat-mode` |
@@ -39,6 +40,39 @@ Everything else came out of the box:
 | everforest | hand written, see below |
 | vim-markdown | `markdown-mode`, or `markdown-ts-mode` on Emacs 31 |
 | nvim-treesitter | `treesit` |
+
+## The mode line
+
+Built to match lualine, and laid out the same way:
+
+```
+ NORMAL   work-env  /Users/bkay/Workspace/xoi-backend/app/main.py    E2 W1  xoi-backend   utf-8  unix   Python  Top  42:7
+```
+
+Left: Evil state on a state-coloured block, the branch, then the **full** path,
+not the project-relative one. The path is elided from the left when the window is
+too narrow, so the file name survives rather than the leading directories.
+
+Right: Flymake counts, the Eglot server, a macro recording indicator, then
+encoding, line ending, major mode, scroll position and line:column.
+
+Powerline separators and the branch glyph come from Nerd Font, which both kitty
+and Ghostty are already configured with here. They live in one place,
+`bk-modeline-glyphs`, so any of them can become plain text:
+
+```elisp
+(setf (alist-get 'branch bk-modeline-glyphs) "git:")
+```
+
+Per-language filetype icons would need the `nerd-icons` package, so the major
+mode is shown as text instead.
+
+Two things worth knowing about how it gets the branch. For file buffers it reads
+`vc-mode`, which Emacs keeps current. Dired and other directory buffers have no
+`vc-mode`, so it reads `.git/HEAD` directly, handling the case where `.git` is a
+file pointing at a worktree's real gitdir, and caches the result for three
+seconds. That is a small file read rather than a git subprocess, because this
+code runs on every redisplay: measured at 0.043 ms per render.
 
 ## The colour scheme
 
@@ -218,6 +252,19 @@ Evil yank and `SPC yf` would stay inside Emacs. Vim got this from `+clipboard`.
 `wl-copy` or `xclip` instead when they are what is available, so the Linux
 machine works too. The write is synchronous on purpose: with `start-process`,
 quitting right after a yank loses it.
+
+### Emacs is not a terminal emulator
+
+`term.el` is a weak one. lazygit inside it comes out with broken panel borders
+and box-drawing characters printed as raw octal escapes, because term.el does not
+decode the UTF-8 the TUI emits. `eat` renders TUIs properly in pure elisp, and
+`vterm` better still with a compiled module, but both are packages and neither
+beats handing the job to something that already is a terminal.
+
+So `SPC lg`, the old lazygit key, now opens **Magit** — Emacs buffers, nothing to
+mangle, and evil-collection already supplies its vim bindings. `SPC gt` runs
+lazygit in a new **tmux window**, where it looks the way it should. It refuses
+with a clear message when `$TMUX` is unset rather than falling back to term.
 
 ### tmux
 

@@ -81,7 +81,11 @@
  "gb"  #'vc-annotate                    ; blame
  "gm"  #'vc-print-log                   ; file history
  "gB"  #'bk-git-browse-commit           ; GitBlameOpenCommitURL
- "lg"  #'bk-git-lazygit
+ ;; lazygit.lua's key, now pointed at Magit: same reach, better tool, and it
+ ;; renders because it is Emacs buffers rather than a TUI in a terminal.
+ "lg"  #'magit-status
+ ;; lazygit itself is still one key away, in a tmux window where it looks right.
+ "gt"  #'bk-git-lazygit
 
  ;; Misc
  "yf"  #'bk-keys-yank-file-path

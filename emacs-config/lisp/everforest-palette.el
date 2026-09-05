@@ -222,14 +222,18 @@
       (tab-bar-tab                 ((t (:background ,bg0 :foreground ,green :weight bold))))
       (tab-bar-tab-inactive        ((t (:background ,bg-dim :foreground ,grey0))))
 
-      ;; Custom faces used by bk-modeline.el and bk-todo.el
-      (bk-modeline-normal-state    ((t (:foreground ,green :weight bold))))
-      (bk-modeline-insert-state    ((t (:foreground ,blue :weight bold))))
-      (bk-modeline-visual-state    ((t (:foreground ,purple :weight bold))))
-      (bk-modeline-replace-state   ((t (:foreground ,orange :weight bold))))
-      (bk-modeline-other-state     ((t (:foreground ,grey2 :weight bold))))
+      ;; Custom faces used by bk-modeline.el and bk-todo.el.  The state and
+      ;; segment faces carry backgrounds because the mode line draws powerline
+      ;; separators between them, and bk-modeline--sep reads these backgrounds to
+      ;; colour the joins.
+      (bk-modeline-normal-state    ((t (:background ,green :foreground ,bg0 :weight bold))))
+      (bk-modeline-insert-state    ((t (:background ,blue :foreground ,bg0 :weight bold))))
+      (bk-modeline-visual-state    ((t (:background ,purple :foreground ,bg0 :weight bold))))
+      (bk-modeline-replace-state   ((t (:background ,orange :foreground ,bg0 :weight bold))))
+      (bk-modeline-other-state     ((t (:background ,grey2 :foreground ,bg0 :weight bold))))
       (bk-modeline-recording       ((t (:foreground ,red :weight bold))))
-      (bk-modeline-branch          ((t (:foreground ,aqua))))
+      (bk-modeline-branch          ((t (:background ,bg4 :foreground ,aqua))))
+      (bk-modeline-segment         ((t (:background ,bg4 :foreground ,fg))))
       (bk-todo-note                ((t (:background ,bg-blue :foreground ,blue :weight bold))))
       (bk-todo-todo                ((t (:background ,bg-yellow :foreground ,yellow :weight bold))))
       (bk-todo-warn                ((t (:background ,bg-red :foreground ,orange :weight bold))))

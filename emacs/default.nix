@@ -50,6 +50,12 @@ let
     # Emacs ships no Nix mode either, and this repo is mostly Nix.
     epkgs.nix-mode
 
+    # The reason a lot of people use Emacs at all. Native buffers rather than a
+    # TUI in a terminal emulator, so there is nothing for term.el to mangle, and
+    # evil-collection already ships its vim bindings. Pulls dash, with-editor
+    # and magit-section; transient it needs is built in.
+    epkgs.magit
+
     # Emacs 30 ships no markdown mode at all, so .md files land in
     # fundamental-mode: no highlighting, and none of the prose settings in
     # bk-options.el fire because they hang off text-mode-hook. Emacs 31 has a

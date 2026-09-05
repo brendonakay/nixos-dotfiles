@@ -17,21 +17,31 @@
       vc-annotate-background-mode nil
       vc-command-messages nil)
 
-;; lazygit.nvim ran lazygit in a floating window.  Emacs has no floating windows
-;; and its `term' is a reasonable TUI host, so this gives lazygit a full frame
-;; and restores the layout on exit.
+;; Magit. Built-in VC still handles the small things bound below, blame and file
+;; history, but anything involving staging, rebasing or reading a branch is
+;; Magit's job.
+(with-eval-after-load 'magit
+  (setq magit-diff-refine-hunk 'all          ; word-level diffs, like gitgutter's
+        magit-save-repository-buffers 'dontask
+        magit-bury-buffer-function #'magit-restore-window-configuration
+        magit-log-arguments '("-n64" "--graph" "--decorate")))
+
+;; lazygit does not belong inside Emacs.  term.el is a weak terminal emulator and
+;; makes a mess of full-screen TUIs: broken panel borders, and box-drawing
+;; characters printed as raw octal escapes.  eat or vterm would render it
+;; properly, but a real terminal renders it best, so this hands it to tmux and
+;; leaves Emacs out of the terminal-emulator business.
 (defun bk-git-lazygit ()
-  "Run lazygit in a terminal buffer covering the frame."
+  "Open lazygit in a new tmux window, in this project's root."
   (interactive)
-  (if (not (executable-find "lazygit"))
-      (user-error "lazygit is not installed")
-    (let ((default-directory (or (when-let* ((p (project-current nil)))
-                                   (project-root p))
-                                 default-directory)))
-      (window-configuration-to-register ?l)
-      (delete-other-windows)
-      (term "lazygit")
-      (rename-buffer "*lazygit*" t))))
+  (unless (executable-find "lazygit")
+    (user-error "lazygit is not installed"))
+  (unless (getenv "TMUX")
+    (user-error "Not inside tmux; run lazygit in a terminal instead"))
+  (let ((root (or (when-let* ((p (project-current nil))) (project-root p))
+                  default-directory)))
+    (call-process "tmux" nil nil nil
+                  "new-window" "-c" (expand-file-name root) "lazygit")))
 
 ;; git-blame.nvim's GitBlameOpenCommitURL opened the commit in a browser.  VC has
 ;; no forge support, so this asks git for the remote and builds the URL, which

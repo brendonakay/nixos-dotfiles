@@ -9,6 +9,15 @@
 
 ;;; Code:
 
+(defface bk-todo-note '((t :inherit font-lock-doc-face :weight bold))
+  "Face for NOTE and TEST keywords.")
+(defface bk-todo-todo '((t :inherit warning :weight bold))
+  "Face for TODO and PERF keywords.")
+(defface bk-todo-warn '((t :inherit warning :weight bold))
+  "Face for WARN keywords.")
+(defface bk-todo-error '((t :inherit error :weight bold))
+  "Face for FIXME, BUG and HACK keywords.")
+
 (defconst bk-todo-keywords
   '(("FIXME" . bk-todo-error)
     ("BUG"   . bk-todo-error)
