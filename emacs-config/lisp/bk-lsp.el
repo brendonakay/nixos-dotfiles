@@ -35,29 +35,49 @@
 
 ;; Left to itself, `eldoc-doc-buffer' takes half the frame.  Keep it to a third,
 ;; pinned at the bottom, and never let it steal the selected window.
+;;
+;; That last part is why there is no (body-function . select-window) here.  It
+;; reads like the way to make the window appear, but what it does is select it,
+;; and the eldoc buffer is read-only and in `special-mode': K would move the
+;; cursor out of the code and into a buffer that refuses every editing key, with
+;; the mode line saying [RO].  Vim's hover float never took the cursor, and
+;; neither does this.
 (add-to-list 'display-buffer-alist
              '("\\*eldoc\\(\\|.*\\)\\*"
                (display-buffer-at-bottom)
                (window-height . 0.33)
-               (dedicated . t)
-               (body-function . select-window)))
+               (dedicated . t)))
 
 ;; K in Vim showed hover text in a float that went away on its own.  The nearest
-;; well-behaved equivalent: ask the server, show the doc window only when there
-;; is something in it, and say so plainly when there is not, rather than opening
-;; an empty buffer over a third of the frame.  q closes it, via evil-collection.
+;; well-behaved equivalent: ask the server, leave the cursor in the code, and let
+;; a second K take the window down.  q also works once the window is selected,
+;; via evil-collection, but needing to go in there to get out was the problem.
+(defun bk-lsp--doc-window ()
+  "Return the window showing the Eldoc buffer, or nil.
+`eldoc-doc-buffer' raises when nothing has ever produced one, which is
+the normal state on the first K of a session, so the error is caught
+rather than guarded against."
+  (when-let* ((buffer (ignore-errors (eldoc-doc-buffer))))
+    (get-buffer-window buffer)))
+
 (defun bk-lsp-hover ()
-  "Show documentation for the thing at point."
+  "Show documentation for the thing at point, or put it away again.
+Vim's float closed itself; this closes on a second K.  Either way the
+cursor stays in the code, so the read-only doc buffer is never somewhere
+you have to escape from."
   (interactive)
-  (if (not (bound-and-true-p eldoc-mode))
-      (message "No documentation source here")
-    ;; Ask for a refresh, then look at what Eldoc actually has.
-    (eldoc t)
-    (let ((buffer (and (fboundp 'eldoc-doc-buffer) (eldoc-doc-buffer))))
-      (if (and (buffer-live-p buffer)
-               (> (buffer-size buffer) 0))
-          (display-buffer buffer)
-        (message "No documentation at point")))))
+  (cond
+   ((not (bound-and-true-p eldoc-mode))
+    (message "No documentation source here"))
+   ;; Already showing: K again is the way out.
+   ((when-let* ((window (bk-lsp--doc-window)))
+      (delete-window window)
+      t))
+   (t
+    ;; `eldoc' with a non-nil argument is the interactive path, and that is what
+    ;; makes `eldoc-display-in-buffer' display the buffer at all.  The request to
+    ;; the server is asynchronous, so the window appears when the reply lands.
+    (eldoc t))))
 
 ;; typos-lsp is the only server the Vim config registered that Eglot does not
 ;; know about.  It is a catch-all for prog-mode and text-mode, but MUST be
@@ -96,7 +116,10 @@
                 go-mode-hook go-ts-mode-hook
                 lua-mode-hook lua-ts-mode-hook
                 typescript-ts-mode-hook tsx-ts-mode-hook
-                js-mode-hook js-ts-mode-hook))
+                js-mode-hook js-ts-mode-hook
+                ;; C/C++: Eglot knows clangd, which clang-tools provides.
+                c-mode-hook c-ts-mode-hook
+                c++-mode-hook c++-ts-mode-hook))
   (add-hook hook #'bk-lsp-maybe-start))
 
 (provide 'bk-lsp)

@@ -87,7 +87,14 @@
  ;; lazygit itself is still one key away, in a tmux window where it looks right.
  "gt"  #'bk-git-lazygit
 
- ;; Misc
+ ;; Misc.  K already reaches the man page for the word at point, via
+ ;; `evil-lookup-func' in bk-man.el; this is the one that prompts, and takes a
+ ;; section, for a page whose name is not under the cursor.
+ "m"   #'man
+ ;; The container equivalents of <leader>c and a terminal, for a project whose
+ ;; compiler is not this machine's.  See bk-container.el.
+ "Cc"  #'bk-container-compile
+ "Cs"  #'bk-container-shell
  "yf"  #'bk-keys-yank-file-path
  "RET" #'bk-keys-zoom-toggle
  "t"   #'bk-todo-list)

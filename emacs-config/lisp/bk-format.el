@@ -29,7 +29,14 @@
     (nix-ts-mode      . ("nixfmt"))
     (sh-mode          . ("shfmt" "-i" "2"))
     (bash-ts-mode     . ("shfmt" "-i" "2"))
-    (haskell-mode     . ("ormolu" "--stdin-input-file")))
+    (haskell-mode     . ("ormolu" "--stdin-input-file"))
+    ;; clang-format reads a .clang-format from the file's directory upwards and
+    ;; falls back to the LLVM style, so -assume-filename is what tells it where
+    ;; to look when the buffer arrives on stdin.
+    (c-mode           . ("clang-format" "-assume-filename"))
+    (c-ts-mode        . ("clang-format" "-assume-filename"))
+    (c++-mode         . ("clang-format" "-assume-filename"))
+    (c++-ts-mode      . ("clang-format" "-assume-filename")))
   "Major mode to formatter command.
 A command ending in a flag that takes the file name gets it appended.
 `conform.lua' listed yamllint for yaml, which only lints, so yaml is
@@ -41,8 +48,9 @@ dropped: neither formatter is installed.")
   (when-let* ((entry (alist-get major-mode bk-format-commands))
               (program (car entry)))
     (when (executable-find program)
-      ;; --stdin-filepath and --stdin-input-file both want the file name next.
-      (if (string-match-p "stdin" (or (car (last entry)) ""))
+      ;; --stdin-filepath, --stdin-input-file and -assume-filename all want the
+      ;; file name next.
+      (if (string-match-p "stdin\\|assume-filename" (or (car (last entry)) ""))
           (append entry (list (or buffer-file-name "-")))
         entry))))
 

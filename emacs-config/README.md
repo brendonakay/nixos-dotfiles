@@ -1,18 +1,12 @@
 # Emacs config
 
-The Neovim config ported to Emacs 30, for evaluating Emacs plus Evil against the
-Vim 9 config in `../vim-config`. `../emacs/default.nix` installs it.
+## Packages
 
-Built up from nothing rather than from Doom or Spacemacs, because the point of
-the exercise is to see what the editor does on its own.
+The Vim config needs **26 third-party plugins**. This needs **nine**, three of
+which are
+Evil:
 
-## The package count, which is the whole argument
-
-The Vim config needs **26 third-party plugins**. This needs **eight**, three of
-which are Evil:
-
-| Package | Why Emacs cannot do it alone |
-| --- | --- |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `evil` | Emacs ships `viper`, which emulates vi, not Vim: no text objects, no visual block, no operator composition |
 | `evil-collection` | bindings for modes Evil does not cover: Dired, help, compilation, the debugger |
 | `evil-surround` | vim-surround |
@@ -21,25 +15,26 @@ which are Evil:
 | `nix-mode` | Emacs ships no Nix mode, and this repo is mostly Nix |
 | `markdown-mode` | Emacs 30 ships no markdown mode either; Emacs 31 has a built-in `markdown-ts-mode` |
 | `magit` | Built-in VC covers blame, log and diff, but nothing built in comes close for staging, rebasing or reading history |
+| `corfu` | The one built-in gap in editing itself: nothing draws a completion menu at point. See below |
 
 Everything else came out of the box:
 
-| Vim plugin | Emacs built-in |
-| --- | --- |
-| vim-lsp, asyncomplete ×3 | Eglot, `completion-at-point`, `completion-preview-mode` |
-| ale | `flymake`, plus `bk-format.el` for the fixers |
-| netrw (and oil.nvim before it) | Dired, and `wdired` for the editable listing |
-| fzf.vim, fzf-wrapper | `project.el`, `fido-vertical-mode` |
-| vim-fugitive, git-messenger | `vc-annotate`, `vc-print-log`; Magit for the rest |
-| vim-which-key | `which-key`, and it opens by itself |
-| vim-commentary | `comment-or-uncomment-region`, wrapped in an Evil operator |
-| vim-repeat | `repeat-mode` |
-| vim-sleuth | `editorconfig-mode` |
-| undotree | Emacs undo is already a tree; `undo-redo` |
-| lightline | `mode-line-format`, see `bk-modeline.el` |
-| everforest | hand written, see below |
-| vim-markdown | `markdown-mode`, or `markdown-ts-mode` on Emacs 31 |
-| nvim-treesitter | `treesit` |
+| Vim plugin                     | Emacs built-in                                             |
+| ------------------------------ | ---------------------------------------------------------- |
+| vim-lsp, asyncomplete ×3       | Eglot and `completion-at-point`, drawn by Corfu            |
+| ale                            | `flymake`, plus `bk-format.el` for the fixers              |
+| netrw (and oil.nvim before it) | Dired, and `wdired` for the editable listing               |
+| fzf.vim, fzf-wrapper           | `project.el`, `fido-vertical-mode`                         |
+| vim-fugitive, git-messenger    | `vc-annotate`, `vc-print-log`; Magit for the rest          |
+| vim-which-key                  | `which-key`, and it opens by itself                        |
+| vim-commentary                 | `comment-or-uncomment-region`, wrapped in an Evil operator |
+| vim-repeat                     | `repeat-mode`                                              |
+| vim-sleuth                     | `editorconfig-mode`                                        |
+| undotree                       | Emacs undo is already a tree; `undo-redo`                  |
+| lightline                      | `mode-line-format`, see `bk-modeline.el`                   |
+| everforest                     | hand written, see below                                    |
+| vim-markdown                   | `markdown-mode`, or `markdown-ts-mode` on Emacs 31         |
+| nvim-treesitter                | `treesit`                                                  |
 
 ## The mode line
 
@@ -73,6 +68,43 @@ Two things worth knowing about how it gets the branch. For file buffers it reads
 file pointing at a worktree's real gitdir, and caches the result for three
 seconds. That is a small file read rather than a git subprocess, because this
 code runs on every redisplay: measured at 0.043 ms per render.
+
+## The completion popup, and why it needed a package
+
+Everything else here replaced a Vim plugin with something already in Emacs. This
+is the one place that argument runs out. The built-ins do complete -- Eglot
+installs a `completion-at-point' function and `dabbrev' covers buffer words --
+but nothing draws the result at point. `tab-always-indent' set to `complete'
+opens the `*Completions*' window at the bottom of the frame, and
+`completion-preview-mode' shows one candidate inline with nothing to move
+through. Neither is what cmp did, and no amount of configuration turns either
+into it.
+
+Corfu is that and nothing more: the same completion-at-point functions, drawn in
+a popup. It used to be unusable here, because it renders in a child frame and
+`emacs-nox` has no window system. Emacs 31 supports child frames on a tty, and
+corfu already tests for it:
+
+```elisp
+(or (display-graphic-p) (featurep 'tty-child-frames))
+```
+
+so the popup renders in the terminal.
+
+The keys took one extra step. Vim completes with C-n and C-p in insert mode, and
+Evil binds both to `evil-complete-next', a dabbrev expansion that changes the
+buffer with no menu -- which is why pressing them looked like nothing happened
+rather than like a missing feature. Corfu's own keymap remaps `next-line' and
+`previous-line', so it would take those keys by itself if they ever reached the
+global binding. They do not. Evil's state keymaps live in
+`emulation-mode-map-alists', which Emacs consults before the
+`minor-mode-overriding-map-alist' entry corfu installs, so Evil wins every time
+and rebinding inside `corfu-map' would have no effect at all.
+
+So `bk-completion.el` binds them in Evil's insert state instead, to two commands
+that move through the popup when it is up and open it when it is not. That last
+part is the half Vim users expect and cmp did not need: in Vim, C-n is what
+*starts* completion.
 
 ## The colour scheme
 
@@ -119,23 +151,23 @@ backups, `recentf`, `savehist`, `eln-cache`, `custom.el` — to `~/.cache/emacs`
 so nothing generated lands in version control. That is the same lesson as
 `~/.vim/after`, where everforest wrote a syntax cache into the repo.
 
-| File | From |
-| --- | --- |
-| `early-init.el` | GC tuning, UI off before the first frame |
-| `init.el` | `init.lua` |
-| `lisp/bk-options.el` | `lua/vim/options.lua` |
-| `lisp/bk-keys.el` | `lua/vim/keymaps.lua` |
-| `lisp/bk-evil.el` | modal editing, and the `gc` operator |
-| `lisp/bk-theme.el` | `colorschemes.lua`, `auto-dark-mode.lua` |
-| `lisp/bk-modeline.el` | `lualine.lua` |
-| `lisp/bk-lsp.el` | `lsp.lua` |
-| `lisp/bk-completion.el` | `completion.lua`, `telescope.lua` |
-| `lisp/bk-format.el` | `conform.lua` |
-| `lisp/bk-dired.el` | `oil.lua` |
-| `lisp/bk-git.el` | `gitblame.lua`, `lazygit.lua` |
-| `lisp/bk-todo.el` | `todo-comments.lua` |
-| `lisp/bk-haskell.el` | the haskell block of `lsp.lua` |
-| `lisp/bk-debug.el` | `debugging.lua` |
+| File                    | From                                     |
+| ----------------------- | ---------------------------------------- |
+| `early-init.el`         | GC tuning, UI off before the first frame |
+| `init.el`               | `init.lua`                               |
+| `lisp/bk-options.el`    | `lua/vim/options.lua`                    |
+| `lisp/bk-keys.el`       | `lua/vim/keymaps.lua`                    |
+| `lisp/bk-evil.el`       | modal editing, and the `gc` operator     |
+| `lisp/bk-theme.el`      | `colorschemes.lua`, `auto-dark-mode.lua` |
+| `lisp/bk-modeline.el`   | `lualine.lua`                            |
+| `lisp/bk-lsp.el`        | `lsp.lua`                                |
+| `lisp/bk-completion.el` | `completion.lua`, `telescope.lua`        |
+| `lisp/bk-format.el`     | `conform.lua`                            |
+| `lisp/bk-dired.el`      | `oil.lua`                                |
+| `lisp/bk-git.el`        | `gitblame.lua`, `lazygit.lua`            |
+| `lisp/bk-todo.el`       | `todo-comments.lua`                      |
+| `lisp/bk-haskell.el`    | the haskell block of `lsp.lua`           |
+| `lisp/bk-debug.el`      | `debugging.lua`                          |
 
 ## Two bindings that changed, and why
 
@@ -175,14 +207,14 @@ kinds by prefix, so `quickfix` catches the sub-kinds. Eglot also sends the
 Flymake diagnostics at point along with the request, which is what a
 diagnostic-attached fix needs.
 
-| HLS feature | Kind | Works in Eglot |
-| --- | --- | --- |
-| Import a name that is not in scope | code action, `quickfix`, hls-refactor-plugin | yes, `cl` |
-| Make import lists fully explicit | code action `quickfix.literals.style`, and a lens | yes, `cl` |
-| Refine import | code action `quickfix.import.refine`, and a lens | yes, `cl` |
-| Change type signature | code action `quickfix`, hls-change-type-signature | yes, `cl` |
-| Organize imports | code action `source.organizeImports` | yes, `co` |
-| **Add type signature** | **lens only**, ghcide | **no** |
+| HLS feature                        | Kind                                              | Works in Eglot |
+| ---------------------------------- | ------------------------------------------------- | -------------- |
+| Import a name that is not in scope | code action, `quickfix`, hls-refactor-plugin      | yes, `cl`      |
+| Make import lists fully explicit   | code action `quickfix.literals.style`, and a lens | yes, `cl`      |
+| Refine import                      | code action `quickfix.import.refine`, and a lens  | yes, `cl`      |
+| Change type signature              | code action `quickfix`, hls-change-type-signature | yes, `cl`      |
+| Organize imports                   | code action `source.organizeImports`              | yes, `co`      |
+| **Add type signature**             | **lens only**, ghcide                             | **no**         |
 
 So auto-imports work. The one genuine loss is the inferred-type-signature lens,
 which ghcide provides as a lens and nothing else; HLS issue #1099, "Code action:
@@ -291,6 +323,111 @@ every outer terminal at once:
 ```
 set -as terminal-features ',*:RGB'
 ```
+
+## A language server in someone else's userspace
+
+Some work has to build against a userspace that is not this machine's, because
+something downstream -- a grader, a CI image, a deployment target -- is the thing
+that actually has to accept the code. What matters then is what that image's
+compiler makes of it, not what this machine's does. On an Ubuntu 22.04 image
+against this system that is gcc 11.4 and glibc 2.35 versus gcc 15.3 and glibc
+2.42, which is wide enough to matter: gcc 15 defaults to C23 and makes implicit
+function declarations a hard error. `lisp/bk-container.el` puts clangd where the
+build is.
+
+The kernel is not part of the difference, which is worth saying because `uname`
+makes it look like it is. A container shares the host kernel, so the image
+reports this one:
+
+```
+host       Linux nixos        6.18.48 #1-NixOS SMP PREEMPT_DYNAMIC ... x86_64 GNU/Linux
+container  Linux 1966b33b7e8f 6.18.48 #1-NixOS SMP PREEMPT_DYNAMIC ... x86_64 x86_64 x86_64 GNU/Linux
+```
+
+Same kernel, down to the `#1-NixOS` build string. The two lines differ in the
+hostname, which is the container id, and in three `x86_64` where there is one:
+`uname -a` prints the processor and hardware platform only when they are known,
+and NixOS's coreutils reports both as `unknown` while Ubuntu's reports `x86_64`.
+Nothing about syscalls, `/proc` or scheduling differs. The userspace above the
+kernel does, and that is the half clangd reads.
+
+Emacs stays on this side and edits the bind-mounted files as ordinary local
+files. Only clangd is remote, over `docker exec`, which `bk-container-clangd`
+returns as an Eglot contact for the C modes. `bk-container-alist` maps a
+directory to the image whose container serves it; anything under that directory
+is covered by the one entry, so several repos that share a target image need only
+one. Everything below is written against two names:
+
+```
+ROOT=<the directory holding the repos>
+IMAGE=<the image tag built below>
+```
+
+The one thing that needs care is paths. Eglot sends absolute paths and they are
+this machine's, because the buffer really is a local file; clangd on the other
+side needs the same file to be reachable by that same name. The cheap way to
+guarantee it is to bind-mount at the identical path on both sides:
+
+```
+-v "$ROOT:$ROOT"
+```
+
+Mount the directory that holds the repos rather than one repo.
+`bk-container--mountpoint` takes the deepest mount containing a directory and
+appends the remainder, so a single mount covers every repo under it.
+
+Where the paths cannot be made to match -- an image already running with the
+tree on `/data`, say -- `bk-container--link` symlinks the host path onto the
+mount inside the container so both names resolve, and is a no-op when they
+already agree. Without one or the other, clangd still parses the buffer text
+(`didOpen` carries it) but nothing that needs the path works:
+
+```
+path not resolvable   '_probe.h' file not found
+                      Use of undeclared identifier 'PROBE_LOCAL_HEADER_FOUND'
+path resolvable       no diagnostics
+```
+
+A `_Static_assert` on `__GLIBC_MINOR__` is the quickest check that the right
+server answered: against the container it passes, and against this machine's
+clangd it fails with `'42 == 35'`.
+
+The image needs clangd in it, and an image that came from somewhere else should
+not be edited to get it, so stack one on top:
+
+```dockerfile
+FROM <the upstream image>
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends clangd bear \
+ && rm -rf /var/lib/apt/lists/*
+```
+
+```
+docker build -f Dockerfile.dev -t "$IMAGE" .
+docker run -dit --name "$IMAGE" \
+  --user $(id -u):$(id -g) -e HOME=/tmp \
+  -v "$ROOT:$ROOT" -w "$ROOT" "$IMAGE"
+```
+
+`--user` is not optional in practice. The image runs as root and a bind mount
+carries uids through unchanged, so a build started in the container writes
+root-owned binaries into the working tree on this side. `HOME` moves because
+`/root` is not writable as an ordinary uid and bear wants a cache directory.
+
+`bear -- make` inside the container writes the `compile_commands.json` clangd
+wants, and it has to be generated there: the flags and include paths only mean
+anything next to the compiler that produced them. Where each directory builds on
+its own there is one file per directory, and clangd takes the nearest.
+
+`<leader>Cc` compiles in the container and `<leader>Cs` opens a shell in it, in a
+tmux window, for the same reason `<leader>gt` does.
+
+One Eglot detail worth keeping, because it is not in the manual. A function
+contact is called from two places with different arities: `eglot--connect` calls
+it with no arguments, while `eglot--guess-contact` reads `func-arity` and calls
+it with (INTERACTIVE PROJECT) unless the maximum arity is exactly 1. A nullary
+function loads without complaint and then fails with wrong-number-of-arguments on
+the first file opened, so `bk-container-clangd` takes two optional arguments.
 
 ## Trying it
 
