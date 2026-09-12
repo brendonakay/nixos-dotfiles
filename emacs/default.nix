@@ -56,6 +56,26 @@ let
     # and magit-section; transient it needs is built in.
     epkgs.magit
 
+    # The completion UI. Corfu's popup is a child frame, which a terminal frame
+    # cannot host, so corfu-terminal draws it with overlays instead and pulls in
+    # popon to do it. Both are needed here because this Emacs is emacs-nox and
+    # every frame is a terminal frame.
+    epkgs.corfu
+    epkgs.corfu-terminal
+
+    # Tree-sitter grammars. Emacs 30 ships the ts modes but no grammars, and
+    # typescript-ts-mode only registers .ts in auto-mode-alist when
+    # (treesit-ready-p 'typescript) -- so without these, .ts and .tsx open in
+    # fundamental-mode. Picked rather than with-all-grammars, which is 238 MiB
+    # against 2 MiB for these four. tsx is its own grammar, not part of
+    # typescript.
+    (epkgs.treesit-grammars.with-grammars (g: with g; [
+      tree-sitter-typescript
+      tree-sitter-tsx
+      tree-sitter-javascript
+      tree-sitter-json
+    ]))
+
     # Emacs 30 ships no markdown mode at all, so .md files land in
     # fundamental-mode: no highlighting, and none of the prose settings in
     # bk-options.el fire because they hang off text-mode-hook. Emacs 31 has a
@@ -93,6 +113,13 @@ in
     pkgs.nil
     pkgs.typos-lsp
     pkgs.lua-language-server
+
+    # JavaScript and TypeScript. Eglot already knows how to start this for
+    # js-mode, js-ts-mode, typescript-ts-mode and tsx-ts-mode, so bk-lsp.el
+    # needs no entry for it. typescript is here because the server drives
+    # tsserver from it.
+    pkgs.typescript-language-server
+    pkgs.typescript
 
     # Formatters, from the list in conform.lua. bk-format.el shells out to them.
     pkgs.prettier

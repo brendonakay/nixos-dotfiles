@@ -129,6 +129,55 @@
 ;; are only used where a grammar is actually present.  Emacs 31 can fetch them.
 (setq treesit-font-lock-level 4)
 
+;; typescript-ts-mode and tsx-ts-mode do register .ts and .tsx themselves, but
+;; from a top-level form guarded by `treesit-ready-p', not from an autoload --
+;; so the registration only happens once something loads the file, and nothing
+;; does.  Left alone, .ts and .tsx open in fundamental-mode with the grammars
+;; sitting right there.  Requiring it lets Emacs's own guard make the call.
+(when (treesit-language-available-p 'typescript)
+  (require 'typescript-ts-mode nil t))
+
+;; .js and .json already have non-tree-sitter modes and will keep using them
+;; unless told otherwise.  `major-mode-remap-alist' is the supported way to say
+;; so, and it leaves the old mode in place if a grammar ever goes missing.
+;; javascript-mode is an alias for js-mode and is the symbol auto-mode-alist
+;; actually carries, so both spellings need an entry.
+(defun bk-ts-imenu-name (node)
+  "Return NODE's name, read from its name field.
+`js--treesit-defun-name', which typescript-ts-mode uses, only knows
+lexical_declaration, function_declaration, method_definition and
+class_declaration.  Anything else gets no name and is dropped from the
+index, which is why interfaces, type aliases and enums never appeared."
+  (when-let* ((name (treesit-node-child-by-field-name node "name")))
+    (treesit-node-text name t)))
+
+(defun bk-ts-imenu-settings ()
+  "Index TypeScript type definitions, which the built-in settings omit.
+typescript-ts-mode indexes only Function, Variable and Class.  In
+TypeScript the types are the abstractions worth seeing, so they go in
+too.  Added as advice rather than from a mode hook on purpose: callers
+that set the major mode under `delay-mode-hooks' -- bk-review does, to
+avoid starting Eglot in a temporary buffer -- never run the hooks, but
+they do run the mode function, and advice with it."
+  (dolist (entry `(("Interface" "\\`interface_declaration\\'" nil bk-ts-imenu-name)
+                   ("Type" "\\`type_alias_declaration\\'" nil bk-ts-imenu-name)
+                   ("Enum" "\\`enum_declaration\\'" nil bk-ts-imenu-name)))
+    (unless (assoc (car entry) treesit-simple-imenu-settings)
+      (setq-local treesit-simple-imenu-settings
+                  (append treesit-simple-imenu-settings (list entry))))))
+
+;; typescript-ts-mode and tsx-ts-mode both derive from this one, so advising it
+;; covers both.
+(with-eval-after-load 'typescript-ts-mode
+  (advice-add 'typescript-ts-base-mode :after #'bk-ts-imenu-settings))
+
+(dolist (pair '((javascript-mode . js-ts-mode)
+                (js-mode . js-ts-mode)
+                (js-json-mode . json-ts-mode)))
+  (when (treesit-language-available-p
+         (if (eq (cdr pair) 'json-ts-mode) 'json 'javascript))
+    (add-to-list 'major-mode-remap-alist pair)))
+
 ;; Spell checking for prose, from the markdown ftplugin.  flyspell shells out to
 ;; aspell, which ../emacs/default.nix installs.
 (setq ispell-program-name (or (executable-find "aspell") "aspell")

@@ -2,7 +2,7 @@
 
 ## Packages
 
-The Vim config needs **26 third-party plugins**. This needs **nine**, three of
+The Vim config needs **26 third-party plugins**. This needs **ten**, three of
 which are
 Evil:
 
@@ -16,6 +16,7 @@ Evil:
 | `markdown-mode` | Emacs 30 ships no markdown mode either; Emacs 31 has a built-in `markdown-ts-mode` |
 | `magit` | Built-in VC covers blame, log and diff, but nothing built in comes close for staging, rebasing or reading history |
 | `corfu` | The one built-in gap in editing itself: nothing draws a completion menu at point. See below |
+| `corfu-terminal` | Corfu's popup is a child frame, which a terminal frame cannot host. Redraws it with overlays through `popon` |
 
 Everything else came out of the box:
 

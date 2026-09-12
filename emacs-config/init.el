@@ -25,6 +25,8 @@
 (require 'bk-theme)
 (require 'bk-modeline)
 (require 'bk-evil)
+(require 'bk-cheatsheet)
+(require 'bk-review)
 (require 'bk-completion)
 (require 'bk-lsp)
 (require 'bk-container)

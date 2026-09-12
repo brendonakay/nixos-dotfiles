@@ -45,7 +45,27 @@
         corfu-quit-no-match 'separator
         corfu-preselect 'prompt    ; nothing selected until C-n, so RET is safe
         corfu-count 12)
-  (global-corfu-mode 1))
+  (global-corfu-mode 1)
+
+  ;; Evil's : line is a minibuffer with its own completion-at-point function, and
+  ;; `global-corfu-minibuffer' is t, which means "turn Corfu on wherever the
+  ;; minibuffer has local capfs".  So :w popped up a completion menu and RET
+  ;; completed the candidate instead of running the command -- hence having to
+  ;; press it twice.  The variable also takes a predicate, so Corfu stays
+  ;; available in other minibuffers that offer completion and keeps out of ex.
+  (setq global-corfu-minibuffer
+        (lambda ()
+          (not (memq 'evil-ex-completion-at-point completion-at-point-functions))))
+
+  ;; Corfu draws its popup in a child frame, and a terminal frame cannot host
+  ;; one: `global-corfu-mode' would come on and no menu would ever appear, while
+  ;; C-n and C-p above quietly drove candidates nobody could see.  corfu-terminal
+  ;; redraws the same popup with overlays through popon.  Guarded on
+  ;; `display-graphic-p' rather than assumed, so a GUI Emacs elsewhere keeps the
+  ;; child frame it can actually use.
+  (when (and (not (display-graphic-p))
+             (require 'corfu-terminal nil t))
+    (corfu-terminal-mode 1)))
 
 ;; completion-preview-mode's ghost text would sit underneath the popup saying a
 ;; slightly different thing, so corfu replaces it where it is installed.  Where

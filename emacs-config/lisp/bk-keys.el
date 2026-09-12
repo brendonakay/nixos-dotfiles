@@ -59,7 +59,16 @@
  ;; grep, xref and flymake buffers.  <leader>cc from keymaps.lua is gone: Emacs
  ;; keymaps reject a binding that is also the prefix of another, where Vim just
  ;; waits out 'timeoutlen'.  q closes a results window, via evil-collection.
- "c"   #'compile
+ ;; c is a prefix now, so compile moved under it.  Emacs keymaps reject a
+ ;; binding that is also the prefix of another one, where Vim would just wait
+ ;; out 'timeoutlen'.
+ "cc"  #'compile
+ "cs"  #'bk-cheatsheet
+ ;; Not <leader>r: bk-keys--eglot binds that to eglot-rename buffer-locally in
+ ;; every LSP buffer, and buffer-local wins over global -- so <leader>r would
+ ;; have been the review everywhere except the code files it is for.  Grouped
+ ;; under c with the cheat sheet instead.
+ "cr"  #'bk-review                     ; everything changed since the base ref
  "h"   #'evil-ex-nohighlight
 
  ;; Files and search.  telescope becomes project.el plus the minibuffer.
@@ -133,6 +142,23 @@
     (kbd "<leader>o") #'eglot-code-action-organize-imports))
 
 (add-hook 'eglot-managed-mode-hook #'bk-keys--eglot)
+
+;; Some modes bind SPC for themselves: Dired moves to the next line, help and
+;; Info page down.  evil-collection keeps those in each mode's auxiliary
+;; normal-state map, and an auxiliary map beats the global one, so the leader
+;; quietly stops working in exactly those buffers -- the same precedence rule
+;; that hid bk-review's RET behind evil-ret.
+;;
+;; Unbinding SPC there lets the global leader through again.  Nothing is lost
+;; that Emacs does not already have another key for: C-v and M-v page, and in
+;; Dired j and k move.  Add to this list whenever another mode swallows SPC;
+;; C-h k on SPC in that buffer names the culprit.
+(with-eval-after-load 'dired
+  (evil-define-key '(normal motion visual) dired-mode-map (kbd "SPC") nil))
+(with-eval-after-load 'help-mode
+  (evil-define-key '(normal motion visual) help-mode-map (kbd "SPC") nil))
+(with-eval-after-load 'info
+  (evil-define-key '(normal motion visual) Info-mode-map (kbd "SPC") nil))
 
 ;; dape, from debugging.lua.  Bound only if dape loaded.
 (with-eval-after-load 'dape
