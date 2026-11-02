@@ -234,6 +234,7 @@
       (bk-modeline-recording       ((t (:foreground ,red :weight bold))))
       (bk-modeline-branch          ((t (:background ,bg4 :foreground ,aqua))))
       (bk-modeline-segment         ((t (:background ,bg4 :foreground ,fg))))
+      (bk-review-added             ((t (:background ,bg-green :extend t))))
       (bk-todo-note                ((t (:background ,bg-blue :foreground ,blue :weight bold))))
       (bk-todo-todo                ((t (:background ,bg-yellow :foreground ,yellow :weight bold))))
       (bk-todo-warn                ((t (:background ,bg-red :foreground ,orange :weight bold))))

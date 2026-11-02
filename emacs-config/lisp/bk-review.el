@@ -10,9 +10,15 @@
 ;; changed region is only where you start reading rather than all you can see.
 ;;
 ;; Everything is built in.  git is called with `call-process', the list is a
-;; `special-mode' buffer with text buttons, diffs use `diff-mode', and the
+;; `special-mode' buffer with clickable rows, diffs use `diff-mode', and the
 ;; entities under each file come from `imenu', which every major mode already
 ;; implements.  No package, and nothing parsed that git will not say plainly.
+;;
+;; The list is sorted newest first by modification time and rebuilt on a timer
+;; while it is on screen, so it can sit in a window while Claude works: the
+;; file being edited rises to the top and is highlighted.  mtime rather than
+;; commit time because most of what Claude touches is not committed yet, and
+;; reading it is a stat per file rather than a git log per file.
 
 ;;; Code:
 
@@ -25,9 +31,35 @@ nil means the merge base with the first of origin/HEAD, main or master
 that exists, which is the branch point.  Set it per project with
 dir-locals, or pass a prefix argument to `bk-review' to be asked.")
 
-(defvar-local bk-review--base nil "Base ref this buffer was built from.")
+(defvar bk-review-recent-seconds 120
+  "Files modified within this many seconds are highlighted.")
+
+(defvar bk-review-refresh-interval 3
+  "Seconds between checks for changes while a review buffer is visible.")
+
+(defface bk-review-recent '((t :inherit warning :weight bold))
+  "Face for files modified within `bk-review-recent-seconds'.")
+
+(defface bk-review-added
+  '((((background dark)) :background "#2f3d2f" :extend t)
+    (t :background "#e3f2e3" :extend t))
+  "Background for lines added since the base, in `bk-review-diff-mode'.
+Background only, so the line keeps its syntax highlighting.")
+
+(defface bk-review-removed '((t :inherit diff-removed :extend t))
+  "Face for the removed lines `bk-review-diff-mode' shows inline.")
+
+(defvar-local bk-review--base nil
+  "Commit this buffer was last drawn against.
+Resolved again from `bk-review--ref' and `bk-review--scope' on every
+refresh, so it follows main when main moves and HEAD when you commit.")
+(defvar-local bk-review--ref nil "Ref asked for, or nil to use the branch point.")
+(defvar-local bk-review--scope 'branch
+  "`branch' for everything since the base, `uncommitted' for since HEAD.")
 (defvar-local bk-review--root nil "Repository root this buffer was built from.")
 (defvar-local bk-review--expanded nil "Files whose entities are shown.")
+(defvar-local bk-review--sort 'recent "How the list is ordered: `recent' or `path'.")
+(defvar-local bk-review--signature nil "What the buffer last rendered, to skip no-op redraws.")
 
 ;;; git
 
@@ -57,8 +89,29 @@ dir-locals, or pass a prefix argument to `bk-review' to be asked.")
         ;; A repository with no other branch: everything since the first commit.
         (string-trim (or (bk-review--git root "rev-list" "--max-parents=0" "HEAD") "")))))
 
+(defun bk-review--resolve-base (root ref scope)
+  "Return the commit to diff against in ROOT, or nil if there is none.
+SCOPE `uncommitted' means HEAD; otherwise REF, or the branch point when
+REF is nil."
+  (let ((sha (cond ((eq scope 'uncommitted)
+                    (bk-review--git root "rev-parse" "--verify" "--quiet" "HEAD"))
+                   (ref (bk-review--git root "rev-parse" "--verify" "--quiet" (concat ref "^{commit}")))
+                   (t (bk-review--default-base root)))))
+    (when sha
+      (let ((sha (string-trim sha)))
+        (unless (string-empty-p sha) sha)))))
+
+(defun bk-review--update-base ()
+  "Resolve `bk-review--base' again; return non-nil if it moved."
+  (let ((base (or (bk-review--resolve-base bk-review--root bk-review--ref bk-review--scope)
+                  (user-error "Could not work out a base ref; set bk-review-base"))))
+    (unless (equal base bk-review--base)
+      (setq bk-review--base base))))
+
 (defun bk-review--changed-files (root base)
-  "Return a list of (STATUS PATH ADDED DELETED) for changes since BASE.
+  "Return a list of (STATUS PATH ADDED DELETED MTIME) for changes since BASE.
+MTIME is the file's modification time as a float, or nil when the file is
+gone from disk.
 Untracked files are included, since a new file is the most interesting
 thing a review can contain."
   (let (files)
@@ -73,7 +126,8 @@ thing a review can contain."
           (let ((path (car (last rest))))
             (push (list (gethash path status "M") path
                         (if (equal added "-") 0 (string-to-number added))
-                        (if (equal deleted "-") 0 (string-to-number deleted)))
+                        (if (equal deleted "-") 0 (string-to-number deleted))
+                        (bk-review--mtime root path))
                   files)))))
     (dolist (path (bk-review--lines root "ls-files" "--others" "--exclude-standard"))
       (push (list "?" path
@@ -82,9 +136,41 @@ thing a review can contain."
                       (if (file-readable-p full)
                           (progn (insert-file-contents full) (count-lines (point-min) (point-max)))
                         0)))
-                  0)
+                  0
+                  (bk-review--mtime root path))
             files))
-    (sort files (lambda (a b) (string< (nth 1 a) (nth 1 b))))))
+    files))
+
+(defun bk-review--mtime (root path)
+  "Return PATH's modification time as a float, or nil if it does not exist."
+  (when-let* ((attrs (file-attributes (expand-file-name path root))))
+    (float-time (file-attribute-modification-time attrs))))
+
+(defun bk-review--sorted (files order)
+  "Return FILES sorted by ORDER, `recent' or `path'.
+Newest first for `recent'; deleted files have no mtime and go last."
+  (sort (copy-sequence files)
+        (if (eq order 'path)
+            (lambda (a b) (string< (nth 1 a) (nth 1 b)))
+          (lambda (a b)
+            (let ((ta (or (nth 4 a) 0)) (tb (or (nth 4 b) 0)))
+              (if (= ta tb) (string< (nth 1 a) (nth 1 b)) (> ta tb)))))))
+
+(defun bk-review--age (mtime)
+  "Return a short label for how long ago MTIME was.
+Coarse on purpose: the label is part of the redraw signature, so a
+finer one would redraw the list every tick."
+  (if (null mtime)
+      ""
+    (let ((secs (- (float-time) mtime)))
+      (cond ((< secs 60) "now")
+            ((< secs 3600) (format "%dm" (/ secs 60)))
+            ((< secs 86400) (format "%dh" (/ secs 3600)))
+            (t (format "%dd" (/ secs 86400)))))))
+
+(defun bk-review--recent-p (mtime)
+  "Non-nil when MTIME is within `bk-review-recent-seconds'."
+  (and mtime (< (- (float-time) mtime) bk-review-recent-seconds)))
 
 (defun bk-review--changed-lines (root base path status)
   "Return the changed line numbers in PATH, on the new side."
@@ -99,6 +185,20 @@ thing a review can contain."
             (dotimes (i (max count 1))
               (push (+ start i) lines)))))
       (or (nreverse lines) '(1)))))
+
+(defun bk-review--file-diff (root base path status &rest args)
+  "Return the diff of PATH since BASE, passing ARGS to git diff.
+An untracked file (STATUS \"?\") is diffed against /dev/null, so it reads
+as one big addition.  That form exits 1 whenever there is a difference,
+which `bk-review--git' would treat as failure."
+  (if (equal status "?")
+      (let ((default-directory (file-name-as-directory root)))
+        (with-temp-buffer
+          (when (memq (apply #'call-process "git" nil (list t nil) nil "diff" "--no-index"
+                             (append args (list "--" "/dev/null" path)))
+                      '(0 1))
+            (buffer-string))))
+    (apply #'bk-review--git root "diff" (append args (list base "--" path)))))
 
 ;;; Entities
 
@@ -208,19 +308,40 @@ leaves behind leaves like \"*class definition*\"."
   (or (get-text-property (point) 'bk-review-entry)
       (user-error "No file on this line")))
 
+(defun bk-review-mouse-visit (event)
+  "Open the file on the row clicked in EVENT, as RET does."
+  (interactive "e")
+  (mouse-set-point event)
+  (bk-review-visit))
+
+;; The whole row is the click target, not just the path.  A `keymap' text
+;; property is consulted before Evil's state maps, which would otherwise take
+;; the click; `follow-link' turns a mouse-1 click into the mouse-2 bound here,
+;; the same route a button takes.
+(defvar-keymap bk-review-row-map
+  :doc "Mouse bindings for a file row in `bk-review-mode'."
+  "<mouse-2>" #'bk-review-mouse-visit)
+
 (defun bk-review--insert-entry (entry root base)
   "Insert one ENTRY for the file list."
-  (pcase-let ((`(,status ,path ,added ,deleted) entry))
-    (let ((start (point)))
+  (pcase-let ((`(,status ,path ,added ,deleted ,mtime) entry))
+    (let ((start (point))
+          (recent (bk-review--recent-p mtime)))
       (insert "  " (propertize (format "%-2s" status)
                                'face (pcase status
                                        ("A" 'diff-added) ("?" 'diff-added)
                                        ("D" 'diff-removed) (_ 'diff-changed)))
-              " ")
-      (insert-text-button path 'face 'default 'follow-link t
-                          'action (lambda (_) (bk-review-visit)))
+              " "
+              (propertize (format "%4s" (bk-review--age mtime))
+                          'face (if recent 'bk-review-recent 'shadow))
+              "  ")
+      (insert (propertize path 'face (if recent 'bk-review-recent 'default)))
       (insert (propertize (format "  +%d" added) 'face 'diff-added))
       (insert (propertize (format " -%d" deleted) 'face 'diff-removed))
+      (add-text-properties start (point) (list 'keymap bk-review-row-map
+                                               'follow-link t
+                                               'mouse-face 'highlight
+                                               'help-echo "mouse-1: open with the diff inline"))
       (insert "\n")
       (when (member path bk-review--expanded)
         (pcase-let ((`(,names . ,note)
@@ -235,10 +356,17 @@ leaves behind leaves like \"*class definition*\"."
 (defun bk-review--render (root base files)
   "Render FILES into the current buffer."
   (let ((inhibit-read-only t)
-        (line (line-number-at-pos)))
+        (line (line-number-at-pos))
+        ;; The list reorders as files change, so follow the file rather than
+        ;; the line number.
+        (path (nth 1 (get-text-property (point) 'bk-review-entry))))
+    (setq files (bk-review--sorted files bk-review--sort))
     (erase-buffer)
     (insert (propertize (format "Review  %s\n" (abbreviate-file-name root)) 'face 'bold))
-    (insert (propertize (format "since   %s" (substring base 0 (min 12 (length base)))) 'face 'shadow))
+    (insert (propertize (format "since   %s %s" (substring base 0 (min 12 (length base)))
+                                (if (eq bk-review--scope 'uncommitted) "(HEAD, uncommitted only)"
+                                  (or bk-review--ref "(branch point)")))
+                        'face 'shadow))
     (when-let* ((branch (bk-review--git root "rev-parse" "--abbrev-ref" "HEAD")))
       (insert (propertize (format "   on %s" (string-trim branch)) 'face 'shadow)))
     (insert "\n\n")
@@ -250,38 +378,127 @@ leaves behind leaves like \"*class definition*\"."
       (insert (propertize (format "  %d file%s changed\n" (length files)
                                   (if (= 1 (length files)) "" "s"))
                           'face 'shadow)))
-    (insert (propertize "\n  RET open   d diff   TAB entities   r refresh   q quit\n" 'face 'shadow))
+    (insert (propertize (format "\n  RET open   d diff   TAB entities   s sort (%s)   u scope (%s)   r refresh   q quit\n"
+                                bk-review--sort bk-review--scope)
+                        'face 'shadow))
     (goto-char (point-min))
-    (forward-line (1- line))))
+    (let ((match (and path
+                      (text-property-search-forward
+                       'bk-review-entry path
+                       (lambda (want entry) (equal want (nth 1 entry)))))))
+      (if match
+          (goto-char (prop-match-beginning match))
+        (goto-char (point-min))
+        (forward-line (1- line))))))
 
 (defun bk-review-refresh ()
   "Rebuild the review list."
   (interactive)
-  (bk-review--render bk-review--root bk-review--base
-                     (bk-review--changed-files bk-review--root bk-review--base)))
+  (bk-review--update-base)
+  (let ((files (bk-review--changed-files bk-review--root bk-review--base)))
+    (setq bk-review--signature (bk-review--signature files))
+    (bk-review--render bk-review--root bk-review--base files)))
+
+(defun bk-review--signature (files)
+  "Return what a render of FILES would show, for comparing against the last one."
+  (list bk-review--base bk-review--scope bk-review--sort bk-review--expanded
+        (mapcar (lambda (f) (list f (bk-review--age (nth 4 f))
+                                  (bk-review--recent-p (nth 4 f))))
+                files)))
+
+;;; Live updates
+
+(defvar bk-review--timer nil "Timer that keeps visible review and diff buffers current.")
+
+(defun bk-review--tick ()
+  "Redraw each visible review buffer whose files have changed.
+Also redraw each visible `bk-review-diff-mode' buffer whose base moved,
+which is how a commit clears the inline diff: the file is unchanged, so
+neither save nor revert fires."
+  (let ((reviews (seq-filter (lambda (b) (eq (buffer-local-value 'major-mode b) 'bk-review-mode))
+                             (buffer-list)))
+        (diffs (seq-filter (lambda (b) (buffer-local-value 'bk-review-diff-mode b))
+                           (buffer-list))))
+    (if (and (null reviews) (null diffs))
+        (progn (cancel-timer bk-review--timer)
+               (setq bk-review--timer nil))
+      (dolist (buffer diffs)
+        (when (get-buffer-window buffer t)
+          (with-current-buffer buffer
+            (with-demoted-errors "bk-review: %S"
+              (when (bk-review--update-base)
+                (bk-review--diff-draw))))))
+      (dolist (buffer reviews)
+        (when-let* ((window (get-buffer-window buffer t)))
+          (with-current-buffer buffer
+            (with-demoted-errors "bk-review: %S"
+              (bk-review--update-base)
+              (let ((files (bk-review--changed-files bk-review--root bk-review--base)))
+                (unless (equal (bk-review--signature files) bk-review--signature)
+                  ;; A timer runs with the buffer's own point, not the
+                  ;; window's, so carry the window's across the redraw.
+                  (goto-char (window-point window))
+                  (setq bk-review--signature (bk-review--signature files))
+                  (bk-review--render bk-review--root bk-review--base files)
+                  (set-window-point window (point)))))))))))
+
+(defun bk-review--start-timer ()
+  "Start the live-update timer unless it is already running."
+  (unless bk-review--timer
+    (setq bk-review--timer
+          (run-with-timer bk-review-refresh-interval bk-review-refresh-interval
+                          #'bk-review--tick))))
+
+(defun bk-review-toggle-sort ()
+  "Switch between newest-first and path order."
+  (interactive)
+  (setq bk-review--sort (if (eq bk-review--sort 'recent) 'path 'recent))
+  (bk-review-refresh))
+
+(defvar bk-review-diff-mode)            ; defined with the inline diff below
+
+(defun bk-review-toggle-scope ()
+  "Switch between the whole branch and uncommitted changes only.
+Inline diffs opened from this repository switch with it."
+  (interactive)
+  (let ((scope (if (eq bk-review--scope 'branch) 'uncommitted 'branch))
+        (root bk-review--root))
+    (setq bk-review--scope scope)
+    (bk-review-refresh)
+    (dolist (buffer (buffer-list))
+      (with-current-buffer buffer
+        (when (and bk-review-diff-mode (equal bk-review--root root))
+          (setq bk-review--scope scope)
+          (bk-review--update-base)
+          (bk-review--diff-draw))))
+    (message "Review: %s" (if (eq scope 'branch) "whole branch" "uncommitted only"))))
 
 (defun bk-review-visit ()
-  "Open the file at point at its first change.
+  "Open the file at point at its first change, with the diff shown inline.
 The real file buffer, so the language server and xref work in it."
   (interactive)
-  (pcase-let ((`(,status ,path ,_ ,_) (bk-review--file-at-point)))
-    (let ((lines (bk-review--changed-lines bk-review--root bk-review--base path status)))
-      (pop-to-buffer (find-file-noselect (expand-file-name path bk-review--root)))
+  (pcase-let ((`(,status ,path . ,_) (bk-review--file-at-point)))
+    (let ((root bk-review--root)
+          (ref bk-review--ref)
+          (scope bk-review--scope)
+          (lines (bk-review--changed-lines bk-review--root bk-review--base path status)))
+      (pop-to-buffer (find-file-noselect (expand-file-name path root)))
+      (setq bk-review--root root
+            bk-review--ref ref
+            bk-review--scope scope)
+      (bk-review-diff-mode 1)
       (goto-char (point-min))
       (forward-line (1- (car lines))))))
 
 (defun bk-review-diff ()
   "Show the diff for the file at point."
   (interactive)
-  (pcase-let ((`(,_ ,path ,_ ,_) (bk-review--file-at-point)))
+  (pcase-let ((`(,status ,path . ,_) (bk-review--file-at-point)))
     (let ((root bk-review--root) (base bk-review--base))
       (with-current-buffer (get-buffer-create "*Review Diff*")
         (let ((inhibit-read-only t))
           (erase-buffer)
-          (insert (or (bk-review--git root "diff" base "--" path)
-                      ;; Untracked: show the file as one big addition.
-                      (bk-review--git root "diff" "--no-index" "/dev/null" path)
-                      ""))
+          (insert (or (bk-review--file-diff root base path status) ""))
           (goto-char (point-min)))
         (diff-mode)
         (setq default-directory (file-name-as-directory root))
@@ -290,7 +507,7 @@ The real file buffer, so the language server and xref work in it."
 (defun bk-review-toggle-entities ()
   "Show or hide the definitions the change touches for the file at point."
   (interactive)
-  (pcase-let ((`(,_ ,path ,_ ,_) (bk-review--file-at-point)))
+  (pcase-let ((`(,_ ,path . ,_) (bk-review--file-at-point)))
     (setq bk-review--expanded
           (if (member path bk-review--expanded)
               (delete path bk-review--expanded)
@@ -302,6 +519,8 @@ The real file buffer, so the language server and xref work in it."
   "RET" #'bk-review-visit
   "d"   #'bk-review-diff
   "TAB" #'bk-review-toggle-entities
+  "s"   #'bk-review-toggle-sort
+  "u"   #'bk-review-toggle-scope
   "r"   #'bk-review-refresh)
 
 ;; Evil's state keymaps live in `emulation-mode-map-alists', which is consulted
@@ -312,13 +531,16 @@ The real file buffer, so the language server and xref work in it."
 ;; them in Evil's own map for this mode, which does win.
 ;;
 ;; g is deliberately left alone so gg still goes to the top; refresh is r, which
-;; is `evil-replace' elsewhere and useless in a read-only buffer.  j, k and q
+;; is `evil-replace' elsewhere and useless in a read-only buffer, as s is
+;; `evil-substitute' and u is `evil-undo'.  j, k and q
 ;; already do the right thing and are not touched.
 (with-eval-after-load 'evil
   (evil-define-key '(normal motion) bk-review-mode-map
     (kbd "RET") #'bk-review-visit
     "d"         #'bk-review-diff
     (kbd "TAB") #'bk-review-toggle-entities
+    "s"         #'bk-review-toggle-sort
+    "u"         #'bk-review-toggle-scope
     "r"         #'bk-review-refresh
     "q"         #'quit-window))
 
@@ -326,23 +548,158 @@ The real file buffer, so the language server and xref work in it."
   "Major mode for reviewing everything a branch changed."
   (setq-local truncate-lines t))
 
+;;; Inline diff
+
+;; ANCHOR: inline diff in the real file buffer.
+;; A unified diff drawn over the file itself rather than in a separate
+;; buffer: added lines are tinted, removed lines appear as read-only text
+;; above where they were, and each gets a + or - in the left margin, which
+;; works in a terminal where the fringe does not exist.  Overlays only, so
+;; the buffer text is untouched and Eglot and editing behave as normal.
+
+(defvar-local bk-review--hunk-starts nil
+  "Buffer positions where each hunk begins, for `bk-review-next-hunk'.")
+
+(defun bk-review--hunks (diff)
+  "Parse a -U0 DIFF into a list of (START COUNT REMOVED).
+START and COUNT are the new side of each hunk; REMOVED is the old lines."
+  (let (hunks)
+    (dolist (line (split-string diff "\n"))
+      (cond
+       ((string-match "\\`@@ -[0-9,]+ \\+\\([0-9]+\\)\\(?:,\\([0-9]+\\)\\)? @@" line)
+        (push (list (string-to-number (match-string 1 line))
+                    (if (match-string 2 line) (string-to-number (match-string 2 line)) 1)
+                    nil)
+              hunks))
+       ;; Lines before the first hunk are headers, where --- is not a removal.
+       ((and hunks (string-prefix-p "-" line))
+        (setf (nth 2 (car hunks)) (append (nth 2 (car hunks)) (list (substring line 1)))))))
+    (nreverse hunks)))
+
+(defun bk-review--margin (char face)
+  "Return CHAR as a left-margin display string in FACE."
+  (propertize " " 'display `((margin left-margin) ,(propertize char 'face face))))
+
+(defun bk-review--diff-overlay (beg end &rest props)
+  "Make an overlay from BEG to END tagged as ours, with PROPS."
+  (let ((ov (make-overlay beg end nil t nil)))
+    (overlay-put ov 'bk-review-diff t)
+    (while props
+      (overlay-put ov (pop props) (pop props)))
+    ov))
+
+(defun bk-review--diff-clear ()
+  "Remove the inline diff from the current buffer."
+  (remove-overlays (point-min) (point-max) 'bk-review-diff t)
+  (setq bk-review--hunk-starts nil))
+
+(defun bk-review--draw-removed (removed)
+  "Show the REMOVED lines above the line at point.
+They hang off the end of the line above rather than the start of this
+one: a line number is drawn where a buffer line starts, so text put in
+front of this line would take its number."
+  (let ((lines (mapcar (lambda (text)
+                         (concat (bk-review--margin "-" 'diff-indicator-removed)
+                                 (propertize text 'face 'bk-review-removed)))
+                       removed)))
+    (if (bobp)
+        (bk-review--diff-overlay (point) (point) 'before-string
+                                 (mapconcat (lambda (l) (concat l "\n")) lines))
+      ;; Before the previous line's newline, or after a last line that lacks one.
+      (let ((pos (if (bolp) (1- (point)) (point))))
+        (bk-review--diff-overlay pos pos 'after-string
+                                 (mapconcat (lambda (l) (concat "\n" l)) lines))))))
+
+(defun bk-review--diff-draw ()
+  "Draw the changes since `bk-review--base' over the current buffer."
+  (bk-review--diff-clear)
+  (when-let* ((file buffer-file-name)
+              (path (file-relative-name file bk-review--root))
+              (status (if (bk-review--git bk-review--root "ls-files" "--error-unmatch" "--" path) "M" "?"))
+              (diff (bk-review--file-diff bk-review--root bk-review--base path status "-U0")))
+    (save-excursion
+      (save-restriction
+        (widen)
+        (pcase-dolist (`(,start ,count ,removed) (bk-review--hunks diff))
+          ;; git numbers a pure deletion by the line before it.
+          (goto-char (point-min))
+          (forward-line (if (zerop count) start (1- start)))
+          (push (point) bk-review--hunk-starts)
+          (when removed
+            (bk-review--draw-removed removed))
+          (unless (zerop count)
+            (let ((beg (point)))
+              (dotimes (_ count)
+                (bk-review--diff-overlay (point) (point) 'before-string
+                                         (bk-review--margin "+" 'diff-indicator-added))
+                (forward-line 1))
+              (bk-review--diff-overlay beg (point) 'face 'bk-review-added))))))
+    (setq bk-review--hunk-starts (sort bk-review--hunk-starts #'<))))
+
+(defun bk-review--set-margins ()
+  "Apply `left-margin-width' to every window showing this buffer."
+  (dolist (window (get-buffer-window-list nil nil t))
+    (set-window-margins window left-margin-width right-margin-width)))
+
+(define-minor-mode bk-review-diff-mode
+  "Show the changes since the review base inline in this file.
+Redraws on save and on revert, so edits made outside Emacs show up as
+auto-revert picks them up, and when the base moves, so a commit clears
+what it committed in the `uncommitted' scope."
+  :lighter " Diff"
+  (if bk-review-diff-mode
+      (progn
+        (unless bk-review--root
+          (setq bk-review--root (expand-file-name (bk-review--root))
+                bk-review--ref bk-review-base))
+        (bk-review--update-base)
+        (bk-review--start-timer)
+        (setq-local left-margin-width 1)
+        (bk-review--set-margins)
+        (bk-review--diff-draw)
+        (add-hook 'after-save-hook #'bk-review--diff-draw nil t)
+        (add-hook 'after-revert-hook #'bk-review--diff-draw nil t))
+    (bk-review--diff-clear)
+    (remove-hook 'after-save-hook #'bk-review--diff-draw t)
+    (remove-hook 'after-revert-hook #'bk-review--diff-draw t)
+    (kill-local-variable 'left-margin-width)
+    (bk-review--set-margins)))
+
+(defun bk-review-next-hunk ()
+  "Move to the start of the next change."
+  (interactive)
+  (let ((here (line-end-position)))
+    (goto-char (or (seq-find (lambda (p) (> p here)) bk-review--hunk-starts)
+                   (user-error "No later change")))))
+
+(defun bk-review-previous-hunk ()
+  "Move to the start of the previous change."
+  (interactive)
+  (let ((here (line-beginning-position)))
+    (goto-char (or (seq-find (lambda (p) (< p here)) (reverse bk-review--hunk-starts))
+                   (user-error "No earlier change")))))
+
+;; Vim's diff-mode motions.  A minor-mode key, so ]c and [c mean this only in
+;; a buffer showing the diff.
+(with-eval-after-load 'evil
+  (evil-define-minor-mode-key '(normal motion) 'bk-review-diff-mode
+    "]c" #'bk-review-next-hunk
+    "[c" #'bk-review-previous-hunk))
+
 ;;;###autoload
 (defun bk-review (&optional ask)
   "Review everything changed since the base ref.
 With a prefix argument ASK, prompt for the ref."
   (interactive "P")
-  (let* ((root (expand-file-name (bk-review--root)))
-         (base (cond (ask (read-string "Base ref: " (or bk-review-base "main")))
-                     (bk-review-base)
-                     (t (bk-review--default-base root)))))
-    (when (string-empty-p base)
-      (user-error "Could not work out a base ref; set bk-review-base"))
+  (let ((root (expand-file-name (bk-review--root)))
+        (ref (if ask (read-string "Base ref: " (or bk-review-base "main")) bk-review-base)))
     (with-current-buffer (get-buffer-create "*Review*")
       (bk-review-mode)
       (setq bk-review--root root
-            bk-review--base base
+            bk-review--ref ref
             bk-review--expanded nil)
       (bk-review-refresh)
+      (bk-review--start-timer)
       (pop-to-buffer (current-buffer)))))
 
 (provide 'bk-review)

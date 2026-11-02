@@ -257,6 +257,24 @@ Check the HLS plugin support matrix for the GHC in use.
 - `C-h f`, `C-h k` and `M-.` read the source of anything, including the C
   primitives. This is the self-documenting part, and it is the reason to be here.
 
+## Reviewing what Claude changed
+
+`SPC cr` (`lisp/bk-review.el`) lists every file changed since the branch point,
+committed or not, the same set a pull request would show. It is built from
+`git`, `diff-mode` and `imenu`, with no package.
+
+- Newest first by modification time, with an age column and a highlight on
+  anything touched in the last two minutes. It redraws every few seconds while
+  visible, so it can sit in a split while Claude works.
+- The base is resolved again on every redraw, so the list follows main when main
+  moves.
+- `u` switches to uncommitted only, compared with HEAD, where a commit clears what
+  it committed. `s` sorts by path instead.
+- RET or a click opens the real file with the diff drawn over it: added lines
+  tinted with `+` in the margin, removed lines shown inline in red. `]c` and `[c`
+  move between changes. Overlays only, so Eglot and editing work as normal.
+  `SPC cd` toggles the same inline diff in any file.
+
 ## Terminal only
 
 `../emacs/default.nix` installs `emacs-nox`, the build with no GUI code at all.
@@ -276,15 +294,20 @@ alternative is paying startup in every pane.
 
 ### The clipboard, which needs help
 
-A GUI Emacs talks to the system clipboard for free. A terminal frame does not:
-`display-selections-p` is nil and `interprogram-cut-function` is
-`gui-select-text`, which does nothing without a window system. Left alone, every
-Evil yank and `SPC yf` would stay inside Emacs. Vim got this from `+clipboard`.
+Vim keeps `y`, `d` and `p` in the unnamed register, inside the editor, and only
+`"+` and `"*` reach the system clipboard. Emacs defaults the other way and pushes
+every kill to the clipboard. `lisp/bk-clipboard.el` sets
+`interprogram-cut-function` and `interprogram-paste-function` to nil to get Vim's
+behaviour, and routes Evil's `+` and `*` registers to the clipboard, so `"+yy`
+and `"+p` work. `SPC yf` writes to `"+` as well, since sharing is its point.
 
-`lisp/bk-clipboard.el` wires the kill ring to `pbcopy` and `pbpaste`, picking
-`wl-copy` or `xclip` instead when they are what is available, so the Linux
-machine works too. The write is synchronous on purpose: with `start-process`,
-quitting right after a yank loses it.
+A GUI Emacs reaches the clipboard for free. A terminal frame does not:
+`display-selections-p` is nil and the selection functions do nothing without a
+window system. Vim got this from `+clipboard`. Here the registers shell out to
+`pbcopy` and `pbpaste`, picking `wl-copy` or `xclip` instead when they are what
+is available, so the Linux machine works too. The write is synchronous on
+purpose: with `start-process`, quitting right after a yank loses it. Clipboard
+text ending in a newline pastes linewise, as in Vim.
 
 ### Emacs is not a terminal emulator
 

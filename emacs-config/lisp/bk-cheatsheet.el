@@ -68,9 +68,13 @@
     ("Review what changed"
      ("SPC cr"     "everything since the base ref")
      ("C-u SPC cr" "same, but ask which ref")
-     ("RET"        "open the file at its first change")
+     ("RET"        "open the file at its first change, diff inline")
+     ("]c / [c"    "next, previous change in that file")
+     ("SPC cd"     "toggle the inline diff in any file")
      ("d"          "diff for this file")
      ("TAB"        "definitions this change touched")
+     ("s"          "newest first, or by path")
+     ("u"          "whole branch, or uncommitted only")
      ("r / q"      "refresh, quit"))
 
     ("Git"

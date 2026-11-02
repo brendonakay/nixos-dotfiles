@@ -49,5 +49,28 @@
 ;; same rule that makes dd and yy work.  Binding gcc explicitly is an error,
 ;; since gc is already a complete binding rather than a prefix.
 
+;; ANCHOR: visual-line paste over the buffer's last line.
+;; Evil's `evil-visual-paste' treats a selection ending at `point-max' as a
+;; last line with no trailing newline: it deletes it, then pastes after the
+;; line above.  When the file does end in a newline, that line above is the
+;; empty one past the end, so the paste lands below a blank line instead of
+;; replacing.  A temporary extra newline keeps the selection off `point-max',
+;; so Evil takes its ordinary replace path.
+(defun bk-evil--visual-paste-last-line (orig &rest args)
+  "Call ORIG with ARGS, making a linewise paste over the last line replace it."
+  (if (and (evil-visual-state-p)
+           (eq (evil-visual-type) 'line)
+           (= evil-visual-end (point-max))
+           (eq (char-before (point-max)) ?\n))
+      (let ((end (marker-position evil-visual-end)))
+        (evil-with-single-undo
+          (save-excursion (goto-char (point-max)) (insert "\n"))
+          (set-marker evil-visual-end end)
+          (unwind-protect (apply orig args)
+            (save-excursion (goto-char (point-max)) (delete-char -1)))))
+    (apply orig args)))
+
+(advice-add 'evil-visual-paste :around #'bk-evil--visual-paste-last-line)
+
 (provide 'bk-evil)
 ;;; bk-evil.el ends here

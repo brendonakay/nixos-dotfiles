@@ -41,6 +41,8 @@
                 (buffer-file-name (abbreviate-file-name buffer-file-name))
                 (t (user-error "Buffer has no file")))))
     (kill-new path)
+    ;; Kills stay inside Emacs (see bk-clipboard.el), so set "+ explicitly.
+    (evil-set-register ?+ path)
     (message "Copied %s to clipboard" path)))
 
 (defmacro bk-keys-define (&rest bindings)
@@ -69,6 +71,7 @@
  ;; have been the review everywhere except the code files it is for.  Grouped
  ;; under c with the cheat sheet instead.
  "cr"  #'bk-review                     ; everything changed since the base ref
+ "cd"  #'bk-review-diff-mode           ; that diff, inline in this file
  "h"   #'evil-ex-nohighlight
 
  ;; Files and search.  telescope becomes project.el plus the minibuffer.

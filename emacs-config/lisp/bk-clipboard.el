@@ -1,13 +1,17 @@
 ;;; bk-clipboard.el --- System clipboard from a terminal frame -*- lexical-binding: t; -*-
 
-;; A GUI Emacs talks to the system clipboard for free.  A terminal frame does
-;; not: `display-selections-p' is nil and `interprogram-cut-function' is
-;; `gui-select-text', which does nothing without a window system.  Left alone,
-;; every Evil yank and `bk-keys-yank-file-path' would stay inside Emacs.
+;; Vim's default: y, d and p use the unnamed register, which never leaves the
+;; editor, and only the + and * registers reach the system clipboard.  Emacs
+;; defaults the other way, pushing every kill to the clipboard through
+;; `interprogram-cut-function'.  This file turns that off and routes Evil's +
+;; and * registers to the clipboard instead, so "+y and "+p work as in Vim.
 ;;
-;; Vim solved the same problem by being compiled with +clipboard.  Here it is a
-;; pair of functions that shell out.  The command is chosen per platform so the
-;; config still works on the Linux machine.
+;; A GUI Emacs reaches the clipboard for free through `gui-set-selection'.  A
+;; terminal frame does not: `display-selections-p' is nil and the selection
+;; functions do nothing without a window system.  Vim solved the same problem
+;; by being compiled with +clipboard.  Here it is a pair of functions that
+;; shell out.  The command is chosen per platform so the config still works on
+;; the Linux machine.
 
 ;;; Code:
 
@@ -30,13 +34,9 @@
                  (_ '(("pbcopy") . ("pbpaste")))))))
     nil))
 
-(defvar bk-clipboard--last nil
-  "The last text this Emacs put on the clipboard.")
-
 (defun bk-clipboard-cut (text)
   "Send TEXT to the system clipboard."
   (when-let* ((cmd (car (bk-clipboard--pair))))
-    (setq bk-clipboard--last text)
     ;; Synchronous on purpose.  With start-process the write is asynchronous, so
     ;; killing Emacs right after a yank loses it, and clipboard payloads are
     ;; small enough that blocking is not worth worrying about.
@@ -47,24 +47,40 @@
                (car cmd) nil nil nil (cdr cmd))))))
 
 (defun bk-clipboard-paste ()
-  "Return the system clipboard contents.
-Returns nil when the clipboard still holds what this Emacs put there,
-which stops the kill ring filling up with duplicates of its own entries."
+  "Return the system clipboard contents."
   (when-let* ((cmd (cdr (bk-clipboard--pair))))
-    (let* ((coding-system-for-read 'utf-8)
-           (text (with-output-to-string
-                   (apply #'call-process (car cmd) nil standard-output nil (cdr cmd)))))
-      (unless (or (string-empty-p text)
-                  (string= text bk-clipboard--last))
-        text))))
+    (let ((coding-system-for-read 'utf-8))
+      (with-output-to-string
+        (apply #'call-process (car cmd) nil standard-output nil (cdr cmd))))))
 
-;; Only in a terminal frame.  A GUI Emacs, on this machine or another, keeps its
-;; native clipboard support.
-(unless (display-graphic-p)
-  (when (bk-clipboard--pair)
-    (setq interprogram-cut-function #'bk-clipboard-cut
-          interprogram-paste-function #'bk-clipboard-paste
-          select-enable-clipboard t)))
+;; ANCHOR: kills stay inside Emacs, like Vim's unnamed register.
+(setq interprogram-cut-function nil
+      interprogram-paste-function nil)
+
+(defun bk-clipboard--evil-set-register (orig register text)
+  "Send the + and * registers to the system clipboard in a terminal frame.
+ORIG is `evil-set-register', called with REGISTER and TEXT otherwise."
+  (if (and (memq register '(?+ ?*)) (not (display-graphic-p)))
+      (bk-clipboard-cut text)
+    (funcall orig register text)))
+
+(defun bk-clipboard--evil-get-register (orig register &rest args)
+  "Read the + and * registers from the system clipboard in a terminal frame.
+ORIG is `evil-get-register', called with REGISTER and ARGS otherwise."
+  (if (and (memq register '(?+ ?*)) (not (display-graphic-p)))
+      (let ((text (bk-clipboard-paste)))
+        ;; Vim pastes clipboard text that ends in a newline linewise.
+        (when (string-suffix-p "\n" text)
+          (put-text-property 0 (length text) 'yank-handler
+                             (list #'evil-yank-line-handler nil t) text))
+        text)
+    (apply orig register args)))
+
+;; Only when a clipboard tool exists.  A GUI frame falls through to Evil's own
+;; handling, which uses the native selection.
+(when (bk-clipboard--pair)
+  (advice-add 'evil-set-register :around #'bk-clipboard--evil-set-register)
+  (advice-add 'evil-get-register :around #'bk-clipboard--evil-get-register))
 
 (provide 'bk-clipboard)
 ;;; bk-clipboard.el ends here
